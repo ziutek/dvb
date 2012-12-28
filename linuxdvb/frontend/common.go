@@ -112,6 +112,11 @@ func Open(filepath string) (d Device, err error) {
 	return
 }
 
+func OpenRO(filepath string) (d Device, err error) {
+	d.file, err = os.Open(filepath)
+	return
+}
+
 func (d Device) Close() error {
 	return d.file.Close()
 }
