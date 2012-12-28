@@ -166,10 +166,10 @@ type SectionFilter struct {
 }
 
 // Dev represents Linux DVB demux device
-type Dev string
+type Device string
 
 // Returns a handler to elementary stream filter.
-func (d Dev) StreamFilter(p *StreamFilterParam) (f StreamFilter, err error) {
+func (d Device) StreamFilter(p *StreamFilterParam) (f StreamFilter, err error) {
 	f.file, err = os.Open(string(d))
 	if err != nil {
 		return
@@ -187,7 +187,7 @@ func (d Dev) StreamFilter(p *StreamFilterParam) (f StreamFilter, err error) {
 }
 
 // Returns a handler to section filter.
-func (d Dev) SectionFilter(p *SectionFilterParam) (f SectionFilter, err error) {
+func (d Device) SectionFilter(p *SectionFilterParam) (f SectionFilter, err error) {
 	f.file, err = os.Open(string(d))
 	if err != nil {
 		return

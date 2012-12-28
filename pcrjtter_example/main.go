@@ -151,7 +151,7 @@ func main() {
 	}
 	fmt.Println()
 
-	dmx := demux.Dev(dmxpath)
+	dmx := demux.Device(dmxpath)
 	filterParam := demux.StreamFilterParam{
 		Pid:  pcrpid,
 		In:   demux.InFrontend,
