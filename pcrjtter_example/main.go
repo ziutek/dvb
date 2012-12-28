@@ -55,7 +55,7 @@ func (p *PCR) PrintReport() {
 	cnt := time.Duration(p.cnt)
 	fmt.Printf(
 		"period: %s, jitter: avg=%s, max=%s\n",
-		time.Now().Sub(p.firstPCR)/cnt, p.jitterSum/cnt, p.jitterMax,
+		time.Now().Sub(p.firstPCR)/cnt, p.jitterSum/(cnt-1), p.jitterMax,
 	)
 	p.reset()
 }
