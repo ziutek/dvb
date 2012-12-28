@@ -161,6 +161,7 @@ const (
 	DVBS Type = iota
 	DVBC
 	DVBT
+	ATSC
 )
 
 func (t Type) String() string {
