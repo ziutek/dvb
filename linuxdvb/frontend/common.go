@@ -8,18 +8,6 @@ const (
 	InversionAuto
 )
 
-type Bandwidth uint
-
-const (
-	Bandwidth8MHz Bandwidth = iota
-	Bandwidth7MHz
-	Bandwidth6MHz
-	BandwidthAuto
-	Bandwidth5Mhz
-	Bandwidth10Mhz
-	Bandwidth1712kHz
-)
-
 type CodeRate uint
 
 const (

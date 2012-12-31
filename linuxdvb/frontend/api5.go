@@ -35,13 +35,13 @@ const (
 	dtvUndefined cmd = iota
 	dtvTune
 	dtvClear
-	dtvFreqency
+	dtvFrequency
 	dtvModulation
 	dtvBandwidthHz
 	dtvInversion
 	dtvDiseqcMaster
 	dtvSymbolRate
-	dtvInnerFec
+	dtvInnerFEC
 	dtvVoltage
 	dtvTone
 	dtvPilot
@@ -96,28 +96,6 @@ type properties struct {
 	props *property
 }
 
-// Device delivery sytem
-const (
-	sysUndefined = iota
-	sysDVBCAnnexAC
-	sysDVBCAnnexB
-	sysDVBT
-	sysDSS
-	sysDVBS
-	sysDVBS2
-	sysDVBH
-	sysISDBT
-	sysISDBS
-	sysISDBC
-	sysATSC
-	sysATSCMH
-	sysDMBTH
-	sysCMMB
-	sysDAB
-	sysDVBT2
-	sysTURBO
-)
-
 func (f Device) set(c cmd, data uint32) error {
 	p := property{cmd: c, data: data}
 	ps := properties{1, &p}
@@ -159,4 +137,121 @@ func (f Device) Version() (major, minor int, err error) {
 	return
 }
 
+// Device delivery sytem
+type DeliverySystem uint32
 
+const (
+	SysUndefined = iota
+	SysDVBCAnnexAC
+	SysDVBCAnnexB
+	SysDVBT
+	SysDSS
+	SysDVBS
+	SysDVBS2
+	SysDVBH
+	SysISDBT
+	SysISDBS
+	SysISDBC
+	SysATSC
+	SysATSCMH
+	SysDMBTH
+	SysCMMB
+	SysDAB
+	SysDVBT2
+	SysTURBO
+)
+
+func (ds DeliverySystem) String() string {
+	dsn := []string{
+		"Undefined",
+		"DVB-C Annex AC",
+		"DVB-C Annex B",
+		"DVB-T",
+		"DSS",
+		"DVB-S",
+		"DVB-S2",
+		"DVB-H",
+		"ISDB-T",
+		"ISDB-S",
+		"ISDB-C",
+		"ATSC",
+		"ATSC-MH",
+		"DMBT-H",
+		"CMMB",
+		"DAB",
+		"DVB-T2",
+		"TURBO",
+	}
+	if ds > DeliverySystem(len(dsn)) {
+		return "Unknown"
+	}
+	return dsn[ds]
+}
+
+func (f Device) DeliverySystem() (DeliverySystem, error) {
+	ds, err := f.get(dtvDeliverySystem)
+	return DeliverySystem(ds), err
+}
+
+func (f Device) SetDeliverySystem(d DeliverySystem) error {
+	return f.set(dtvDeliverySystem, uint32(d))
+}
+
+func (f Device) Tune() error {
+	return f.set(dtvTune, 0)
+}
+
+func (f Device) Clear() error {
+	return f.set(dtvClear, 0)
+}
+
+func (f Device) Frequency() (uint32, error) {
+	return f.get(dtvFrequency)
+}
+
+func (f Device) SetFrequency(freq uint32) error {
+	return f.set(dtvFrequency, freq)
+}
+
+func (f Device) Modulation() (Modulation, error) {
+	m, err := f.get(dtvModulation)
+	return Modulation(m), err
+}
+
+func (f Device) SetModulation(m Modulation) error {
+	return f.set(dtvModulation, uint32(m))
+}
+
+func (f Device) BandwidthHz() (uint32, error) {
+	return f.get(dtvBandwidthHz)
+}
+
+func (f Device) SetBandwidthHz(bw uint32) error {
+	return f.set(dtvBandwidthHz, bw)
+}
+
+func (f Device) Inversion() (Inversion, error) {
+	i, err := f.get(dtvInversion)
+	return Inversion(i), err
+}
+
+func (f Device) SetInversion(i Inversion) error {
+	return f.set(dtvInversion, uint32(i))
+}
+
+func (f Device) SymbolRate() (uint32, error) {
+	return f.get(dtvSymbolRate)
+}
+
+func (f Device) SetSymbolRate(bd uint32) error {
+	return f.set(dtvSymbolRate, bd)
+}
+
+func (f Device) InnerFEC() (CodeRate, error) {
+	r, err := f.get(dtvInnerFEC)
+	return CodeRate(r), err
+}
+
+func (f Device) SetInnerFEC(r CodeRate) error {
+	return f.set(dtvInnerFEC, uint32(r))
+}

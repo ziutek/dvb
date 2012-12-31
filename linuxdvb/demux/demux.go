@@ -124,7 +124,7 @@ func (f StreamFilter) AddPid(pid uint16) error {
 		syscall.SYS_IOCTL,
 		uintptr(f.file.Fd()),
 		_DMX_ADD_PID,
-		uintptr(pid),
+		uintptr(unsafe.Pointer(&pid)),
 	)
 	if e != 0 {
 		return e
@@ -137,7 +137,7 @@ func (f StreamFilter) RemovePid(pid uint16) error {
 		syscall.SYS_IOCTL,
 		uintptr(f.file.Fd()),
 		_DMX_REMOVE_PID,
-		uintptr(pid),
+		uintptr(unsafe.Pointer(&pid)),
 	)
 	if e != 0 {
 		return e

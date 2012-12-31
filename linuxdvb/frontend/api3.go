@@ -235,6 +235,18 @@ func (f API3) Info() (*Info, error) {
 	return i, err
 }
 
+type Bandwidth uint
+
+const (
+	Bandwidth8MHz Bandwidth = iota
+	Bandwidth7MHz
+	Bandwidth6MHz
+	BandwidthAuto
+	Bandwidth5Mhz
+	Bandwidth10Mhz
+	Bandwidth1712kHz
+)
+
 type ParamDVBT struct {
 	Freq       uint32    // frequency in Hz
 	Inversion  Inversion // spectral inversion
