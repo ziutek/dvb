@@ -1,9 +1,5 @@
 package frontend
 
-import (
-	"os"
-)
-
 type Inversion uint
 
 const (
@@ -102,25 +98,3 @@ const (
 	Rolloff25
 	RolloffAuto
 )*/
-
-type Device struct {
-	file *os.File
-}
-
-func Open(filepath string) (d Device, err error) {
-	d.file, err = os.OpenFile(filepath, os.O_RDWR, 0)
-	return
-}
-
-func OpenRO(filepath string) (d Device, err error) {
-	d.file, err = os.Open(filepath)
-	return
-}
-
-func (d Device) Close() error {
-	return d.file.Close()
-}
-
-func (d Device) Fd() uintptr {
-	return d.file.Fd()
-}

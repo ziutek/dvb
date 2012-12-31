@@ -117,16 +117,15 @@ func (p *PCR) Loop(dvr ts.PktReader) {
 		p.lastPCR = pcr
 		p.lastRead = now
 		p.cnt++
-
 	}
 }
 
 func main() {
-	fedev, err := frontend.Open(fepath)
+	fe, err := frontend.Open(fepath)
 	checkErr(err)
-	fe := frontend.API3{fedev}
+	fe3 := frontend.API3{fe}
 
-	feInfo, err := fe.Info()
+	feInfo, err := fe3.Info()
 	checkErr(err)
 	fmt.Println("Frontend information\n")
 	fmt.Println(feInfo)
@@ -142,11 +141,11 @@ func main() {
 	fmt.Printf("Tuning to %d MHz...\n", uint(freq))
 	feParam := frontend.DefaultParamDVBT(feInfo.Caps, "pl")
 	feParam.Freq = freq * 1e6
-	checkErr(fe.TuneDVBT(feParam))
+	checkErr(fe3.TuneDVBT(feParam))
 
 	var ev frontend.EventDVBT
 	for ev.Status&frontend.HasLock == 0 {
-		checkErr(fe.GetEventDVBT(&ev))
+		checkErr(fe3.GetEventDVBT(&ev))
 		fmt.Println("FE status:", ev.Status)
 	}
 	fmt.Println()
