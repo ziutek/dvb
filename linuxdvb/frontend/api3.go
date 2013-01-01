@@ -8,7 +8,7 @@ import (
 	"unsafe"
 )
 
-type Caps uint
+type Caps uint32
 
 const IsStupid Caps = 0
 
@@ -155,7 +155,7 @@ func (c Caps) String() string {
 	return can
 }
 
-type Type uint
+type Type uint32
 
 const (
 	DVBS Type = iota
@@ -172,6 +172,8 @@ func (t Type) String() string {
 		return "DVB-C"
 	case DVBT:
 		return "DVB-T"
+	case ATSC:
+		return "ATSC"
 	}
 	return "unknown"
 }
@@ -183,7 +185,7 @@ type API3 struct {
 
 type Info struct {
 	Name          [128]byte
-	Type          Type
+	Type          Type // DEPRECATED. Use Device.DeliverySystem() instead
 	FreqMin       uint32
 	FreqMax       uint32
 	FreqStepSize  uint32
@@ -191,7 +193,7 @@ type Info struct {
 	SRMin         uint32
 	SRMax         uint32
 	SRTolerance   uint32 // ppm
-	NotiferDelay  uint32 // ms
+	NotiferDelay  uint32 // DEPRECATED
 	Caps          Caps
 }
 
@@ -235,7 +237,7 @@ func (f API3) Info() (*Info, error) {
 	return i, err
 }
 
-type Bandwidth uint
+type Bandwidth uint32
 
 const (
 	Bandwidth8MHz Bandwidth = iota
@@ -314,7 +316,7 @@ func (f API3) TuneDVBT(p *ParamDVBT) error {
 	return nil
 }
 
-type Status uint
+type Status uint32
 
 const (
 	HasSignal  Status = 1 << iota // found something above the noise level

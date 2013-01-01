@@ -1,6 +1,6 @@
 package frontend
 
-type Inversion uint
+type Inversion uint32
 
 const (
 	InversionOff Inversion = iota
@@ -8,7 +8,7 @@ const (
 	InversionAuto
 )
 
-type CodeRate uint
+type CodeRate uint32
 
 const (
 	FECNone CodeRate = iota
@@ -25,7 +25,7 @@ const (
 	FEC910
 )
 
-type Modulation uint
+type Modulation uint32
 
 const (
 	QPSK Modulation = iota
@@ -43,7 +43,7 @@ const (
 	DQPSK
 )
 
-type TxMode uint
+type TxMode uint32
 
 const (
 	TxMode2k TxMode = iota
@@ -55,7 +55,7 @@ const (
 	TxMode32k
 )
 
-type GuardInt uint
+type GuardInt uint32
 
 const (
 	GuardInt32 GuardInt = iota // 1/32
@@ -68,7 +68,7 @@ const (
 	GuardIntN256 // 19/128
 )
 
-type Hierarchy uint
+type Hierarchy uint32
 
 const (
 	HierarchyNone Hierarchy = iota
@@ -78,7 +78,7 @@ const (
 	HierarchyAuto
 )
 
-/*type Rolloff uint
+/*type Rolloff uint32
 
 const (
 	Rolloff35 Rolloff = iota // Implied value in DVB-S, default for DVB-S2

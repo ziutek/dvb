@@ -18,7 +18,8 @@ const (
 	fepath  = adpath + "/frontend0"
 	dmxpath = adpath + "/demux0"
 	dvrpath = adpath + "/dvr0"
-	freq    = 778 // MHz
+	//freq    = 778 // MHz
+	freq    = 674 // MHz
 	pcrpid  = 202
 )
 
