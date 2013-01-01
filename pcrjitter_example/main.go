@@ -19,8 +19,8 @@ const (
 	dmxpath = adpath + "/demux0"
 	dvrpath = adpath + "/dvr0"
 	//freq    = 778 // MHz
-	freq    = 674 // MHz
-	pcrpid  = 202
+	freq   = 674 // MHz
+	pcrpid = 202
 )
 
 func checkErr(err error) {
@@ -52,13 +52,22 @@ func (p *PCR) reset() {
 }
 
 func (p *PCR) PrintReport() {
+	defer p.reset()
 	p.discard = true
+
+	if p.cnt == 0 {
+		fmt.Println("no PCR data")
+		return
+	}
+	if p.cnt < 5 {
+		fmt.Println("too few PCR values received: ", p.cnt)
+		return
+	}
 	cnt := time.Duration(p.cnt)
 	fmt.Printf(
 		"period: %s, jitter: avg=%s, max=%s\n",
 		time.Now().Sub(p.firstPCR)/cnt, p.jitterSum/(cnt-1), p.jitterMax,
 	)
-	p.reset()
 }
 
 func (p *PCR) Loop(dvr ts.PktReader) {

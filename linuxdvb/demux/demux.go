@@ -42,14 +42,14 @@ func (f Filter) Stop() error {
 
 // Parameters for StreamFilter
 
-type Input uint
+type Input uint32
 
 const (
 	InFrontend Input = iota
 	InDvr
 )
 
-type Output uint
+type Output uint32
 
 const (
 	OutDecoder Output = iota
@@ -58,7 +58,7 @@ const (
 	OutTSDemuxTap
 )
 
-type StreamType uint
+type StreamType uint32
 
 const (
 	Audi StreamType = iota
