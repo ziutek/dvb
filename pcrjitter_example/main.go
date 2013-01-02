@@ -66,15 +66,13 @@ func (p *PCR) PrintReport() {
 	cnt := time.Duration(p.cnt)
 	fmt.Printf(
 		"period: %s, jitter: avg=%s, max=%s\n",
-		time.Now().Sub(p.firstPCR)/cnt, p.jitterSum/(cnt-1), p.jitterMax,
+		lastRead.Sub(p.firstPCR)/cnt, p.jitterSum/(cnt-1), p.jitterMax,
 	)
 }
 
 func (p *PCR) Loop(dvr ts.PktReader) {
-	runtime.LockOSThread()
-
-	uid := os.Geteuid()
-	if uid == 0 {
+	if os.Geteuid() == 0 {
+		runtime.LockOSThread()
 		t := thread.Current()
 		fmt.Println("Setting realtime sheduling for thread:", t)
 		p := sched.Param{

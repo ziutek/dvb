@@ -7,16 +7,20 @@ import (
 // AF represents content of adaptation field
 type AF []byte
 
+const BadPCR = PCR(1<<64 - 1)
+
+// PCR returns BadPCR if can't decode PCR in adaptation field
 func (a AF) PCR() PCR {
 	if len(a) < 7 {
-		panic("adaptation field too short to obtain PCR")
+		return BadPCR
 	}
 	return decodePCR(a[1:7])
 }
 
+// OPCR returns BadPCR if can't decode OPCR in adaptation field
 func (a AF) OPCR() PCR {
 	if len(a) < 7+6 {
-		panic("adaptation field too short to obtain OPCR")
+		return BadPCR
 	}
 	return decodePCR(a[7:13])
 }
@@ -27,6 +31,9 @@ func decodePCR(a []byte) PCR {
 	b := uint(a[0])<<24 | uint(a[1])<<16 | uint(a[2])<<8 | uint(a[3])
 	base := uint64(b)<<1 | uint64(a[4])>>7
 	ext := uint(a[4]&1)<<8 | uint(a[5])
+	if ext >= 300 {
+		return BadPCR
+	}
 	return PCR(base*300 + uint64(ext))
 }
 
