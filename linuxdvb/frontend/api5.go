@@ -45,7 +45,7 @@ const (
 	dtvVoltage
 	dtvTone
 	dtvPilot
-	dtvRollOff
+	dtvRolloff
 	dtvDiseqcSlaveReply
 	dtvFeCapabilityCount
 	dtvFeCapability
@@ -254,4 +254,85 @@ func (f Device) InnerFEC() (CodeRate, error) {
 
 func (f Device) SetInnerFEC(r CodeRate) error {
 	return f.set(dtvInnerFEC, uint32(r))
+}
+
+func (f Device) Voltage() (Voltage, error) {
+	v, err := f.get(dtvVoltage)
+	return Voltage(v), err
+}
+
+func (f Device) SetVoltage(v Voltage) error {
+	return f.set(dtvVoltage, uint32(v))
+}
+
+func (f Device) Tone() (Tone, error) {
+	t, err := f.get(dtvTone)
+	return Tone(t), err
+}
+
+func (f Device) SetTone(t Tone) error {
+	return f.set(dtvTone, uint32(t))
+}
+
+func (f Device) Pilot() (Pilot, error) {
+	p, err := f.get(dtvPilot)
+	return Pilot(p), err
+}
+
+func (f Device) SetPilot(p Pilot) error {
+	return f.set(dtvPilot, uint32(p))
+}
+
+func (f Device) Rolloff() (Rolloff, error) {
+	r, err := f.get(dtvRolloff)
+	return Rolloff(r), err
+}
+
+func (f Device) SetRolloff(r Rolloff) error {
+	return f.set(dtvRolloff, uint32(r))
+}
+
+func (f Device) CodeRateHP() (CodeRate, error) {
+	r, err := f.get(dtvCodeRateHP)
+	return CodeRate(r), err
+}
+
+func (f Device) SetCodeRateHP(r CodeRate) error {
+	return f.set(dtvCodeRateHP, uint32(r))
+}
+
+func (f Device) CodeRateLP() (CodeRate, error) {
+	r, err := f.get(dtvCodeRateLP)
+	return CodeRate(r), err
+}
+
+func (f Device) SetCodeRateLP(r CodeRate) error {
+	return f.set(dtvCodeRateLP, uint32(r))
+}
+
+func (f Device) GuardInt() (GuardInt, error) {
+	g, err := f.get(dtvGuardInterval)
+	return GuardInt(g), err
+}
+
+func (f Device) SetGuardInt(g GuardInt) error {
+	return f.set(dtvGuardInterval, uint32(g))
+}
+
+func (f Device) TxMode() (TxMode, error) {
+	m, err := f.get(dtvTransmissionMode)
+	return TxMode(m), err
+}
+
+func (f Device) SetTxMode(m TxMode) error {
+	return f.set(dtvTransmissionMode, uint32(m))
+}
+
+func (f Device) Hierarchy() (Hierarchy, error) {
+	h, err := f.get(dtvHierarchy)
+	return Hierarchy(h), err
+}
+
+func (f Device) SetHierarchy(h Hierarchy) error {
+	return f.set(dtvHierarchy, uint32(h))
 }

@@ -78,11 +78,38 @@ const (
 	HierarchyAuto
 )
 
-/*type Rolloff uint32
+// Satellite equipment control (SEC) voltage
+type Voltage uint32
+
+const (
+	Voltage13 Voltage = iota
+	Voltage18
+	VoltageOff
+)
+
+// Satellite equipment control (SEC) tone
+type Tone uint32
+
+const (
+	ToneOn Tone = iota
+	TonefOff
+)
+
+// DVB-S2 pilot
+type Pilot uint32
+
+const (
+	PilotOn Pilot = iota
+	PilotOff
+	PilotAuto
+)
+
+// DVB-S2 rolloff
+type Rolloff uint32
 
 const (
 	Rolloff35 Rolloff = iota // Implied value in DVB-S, default for DVB-S2
 	Rolloff20
 	Rolloff25
 	RolloffAuto
-)*/
+)
