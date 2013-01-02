@@ -26,7 +26,7 @@ const (
 func checkErr(err error) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		if err != dvb.OverflowError && err != ts.SyncError {
+		if err != dvb.ErrOverflow && err != ts.ErrSync {
 			os.Exit(1)
 		}
 	}

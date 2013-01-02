@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	// OverflowError means that some buffer has been overflowed and some data
+	// ErrOverflow means that some buffer has been overflowed and some data
 	// has been lost.
-	OverflowError = errors.New("buffering overflow")
+	ErrOverflow = errors.New("buffering overflow")
 )

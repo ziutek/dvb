@@ -9,13 +9,13 @@ import (
 )
 
 var (
-	// SyncError means a lost of MPEG-TS synchronization.
-	SyncError = errors.New("MPEG-TS synchronization error")
+	// ErrSync means a lost of MPEG-TS synchronization.
+	ErrSync = errors.New("MPEG-TS synchronization error")
 )
 
 type PktReader interface {
 	// ReadPkt reads one MPEG-TS packet.
-	// If it returns SyncError or dvb.OverflowError you can try to Read next
+	// If it returns ErrSync or dvb.ErrOverflow you can try to Read next
 	// packet.
 	ReadPkt(Pkt) error
 }
@@ -25,7 +25,7 @@ type PktReader interface {
 // for real-time applications (it doesn't cause GC to run).
 //
 // Using PktStream you can start read at any point in stream. If the start point
-// doesn't match a beginning of a packet, PktReader returns SyncError and
+// doesn't match a beginning of a packet, PktReader returns ErrSync and
 // tries to synchronize during next read.
 type PktStream struct {
 	r       io.Reader
@@ -70,12 +70,12 @@ func (p *PktStream) synchronize() (err error) {
 			return
 		}
 	}
-	return SyncError
+	return ErrSync
 }
 
 func convertEoverflow(err error) error {
 	if e, ok := err.(*os.PathError); ok && e.Err == syscall.EOVERFLOW {
-		return dvb.OverflowError
+		return dvb.ErrOverflow
 	}
 	return err
 }
@@ -84,7 +84,7 @@ func convertEoverflow(err error) error {
 // for out of sync state when it reads more than one packet to internal buffer
 // and tries to synchronize. ReadPkt check len(pkt) and panics if it isn't
 // PktLen (usefull if bound checking is disabled at compile time).
-// ReadPkt converts os.PathError{Err: syscall.EOVERFLOW} to dvb.OverflowError.
+// ReadPkt converts os.PathError{Err: syscall.EOVERFLOW} to dvb.ErrOverflow.
 func (p *PktStream) ReadPkt(pkt Pkt) error {
 	if len(pkt) != PktLen {
 		panic("wrong MPEG-TS packet length")
@@ -108,7 +108,7 @@ func (p *PktStream) ReadPkt(pkt Pkt) error {
 	if !pkt.SyncOK() {
 		p.sbStart = -1
 		copy(p.syncBuf[:], pkt)
-		return SyncError
+		return ErrSync
 	}
 	return nil
 }
