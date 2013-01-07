@@ -34,7 +34,7 @@ func (p Pkt) Flags() PktFlags {
 type PktFlags byte
 
 // Error returns true if transport_error_indicator == 1
-func (f PktFlags) Error() bool {
+func (f PktFlags) ContainsError() bool {
 	return f&0x80 != 0
 }
 

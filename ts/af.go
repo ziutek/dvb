@@ -42,7 +42,8 @@ func (c PCR) Nanosec() time.Duration {
 	return time.Duration(c * 1000 / 27)
 }
 
-// Flags returns adaptation field flags
+// Flags returns adaptation field flags.
+// If len(af) == 0 returns zero flags (all methods returns false).
 func (a AF) Flags() AFFlags {
 	if len(a) == 0 {
 		return 0
