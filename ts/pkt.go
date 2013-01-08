@@ -71,14 +71,15 @@ func (f PktFlags) ContainsPayload() bool {
 	return f&1 != 0
 }
 
-// AF returns adaptation field bytes It returns nil if ContainsAF() == false
-// or adaptation_field_length byte is too big
+// AF returns adaptation field bytes. If p doesn't contain AF it returns AF{}.
+// If adaptation_field_length byte has wrong value it returns nil.
 func (p Pkt) AF() AF {
-	if !p.Flags().ContainsAF() {
-		return nil
+	f := p.Flags()
+	if !f.ContainsAF() {
+		return AF{}
 	}
 	alen := p[4]
-	if p.Flags().ContainsPayload() {
+	if f.ContainsPayload() {
 		if alen > 182 {
 			return nil
 		}
@@ -88,4 +89,22 @@ func (p Pkt) AF() AF {
 		}
 	}
 	return AF(p[5 : 5+alen])
+}
+
+// Payload returns payload bytes. It returns nil if packet dosn't contain
+// payload or adaptation_field_length byte has wrong value.
+func (p Pkt) Payload() []byte {
+	f := p.Flags()
+	if !f.ContainsPayload() {
+		return nil
+	}
+	offset := 4
+	if f.ContainsAF() {
+		af := p.AF()
+		if af == nil {
+			return nil
+		}
+		offset += len(af) + 1
+	}
+	return p[offset:]
 }

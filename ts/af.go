@@ -1,46 +1,12 @@
 package ts
 
 import (
+	"errors"
 	"time"
 )
 
 // AF represents content of adaptation field
 type AF []byte
-
-const BadPCR = PCR(1<<64 - 1)
-
-// PCR returns BadPCR if can't decode PCR in adaptation field
-func (a AF) PCR() PCR {
-	if len(a) < 7 {
-		return BadPCR
-	}
-	return decodePCR(a[1:7])
-}
-
-// OPCR returns BadPCR if can't decode OPCR in adaptation field
-func (a AF) OPCR() PCR {
-	if len(a) < 7+6 {
-		return BadPCR
-	}
-	return decodePCR(a[7:13])
-}
-
-type PCR uint64
-
-func decodePCR(a []byte) PCR {
-	b := uint(a[0])<<24 | uint(a[1])<<16 | uint(a[2])<<8 | uint(a[3])
-	base := uint64(b)<<1 | uint64(a[4])>>7
-	ext := uint(a[4]&1)<<8 | uint(a[5])
-	if ext >= 300 {
-		return BadPCR
-	}
-	return PCR(base*300 + uint64(ext))
-}
-
-// Nanosec returns c * 1000 / 27
-func (c PCR) Nanosec() time.Duration {
-	return time.Duration(c * 1000 / 27)
-}
 
 // Flags returns adaptation field flags.
 // If len(af) == 0 returns zero flags (all methods returns false).
@@ -91,4 +57,76 @@ func (f AFFlags) ContainsPrivateData() bool {
 // HasExtension returns true if adaptation_field_extension_flag == 1
 func (f AFFlags) HasExtension() bool {
 	return f&1 != 0
+}
+
+var (
+	ErrAFTooShort = errors.New("adaptation field is too short")
+	ErrBadPCR     = errors.New("PCR decoding error")
+)
+
+func panicAFField(fname string) {
+	panic("there is no " + fname + "field in adaptation field")
+}
+
+type PCR uint64
+
+func decodePCR(a []byte) (PCR, error) {
+	b := uint(a[0])<<24 | uint(a[1])<<16 | uint(a[2])<<8 | uint(a[3])
+	base := uint64(b)<<1 | uint64(a[4])>>7
+	ext := uint(a[4]&1)<<8 | uint(a[5])
+	if ext >= 300 {
+		return 0, ErrBadPCR
+	}
+	return PCR(base*300 + uint64(ext)), nil
+}
+
+// Nanosec returns c * 1000 / 27
+func (c PCR) Nanosec() time.Duration {
+	return time.Duration(c * 1000 / 27)
+}
+
+// PCR returns ErrBadPCR if ContainsPCR() == 0 or can't decode PCR
+func (a AF) PCR() (PCR, error) {
+	if !a.Flags().ContainsPCR() {
+		panicAFField("PCR")
+	}
+	end := 1 + 6
+	if len(a) < end {
+		return 0, ErrAFTooShort
+	}
+	return decodePCR(a[end-6 : end])
+}
+
+// OPCR returns BadPCR if ContainsOPCR() == 0 or can't decode OPCR
+func (a AF) OPCR() (PCR, error) {
+	f := a.Flags()
+	if !f.ContainsOPCR() {
+		panicAFField("OPCR")
+	}
+	end := 1 + 7
+	if f.ContainsPCR() {
+		end += 6
+	}
+	if len(a) < end {
+		return 0, ErrAFTooShort
+	}
+	return decodePCR(a[end-6 : end])
+}
+
+func (a AF) SpliceCountdown() (int8, error) {
+	f := a.Flags()
+	if !f.SplicingPoint() {
+		panicAFField("SpliceCountdown")
+	}
+	offset := 1
+	if f.ContainsPCR() {
+		offset += 6
+	}
+	if f.ContainsOPCR() {
+		offset += 6
+	}
+	if len(a) < offset+1 {
+		return 0, ErrAFTooShort
+	}
+	return int8(a[offset]), nil
 }
