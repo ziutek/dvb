@@ -66,7 +66,7 @@ func (p *PCR) PrintReport() {
 	cnt := time.Duration(p.cnt)
 	fmt.Printf(
 		"period: %s, jitter: avg=%s, max=%s\n",
-		lastRead.Sub(p.firstPCR)/cnt, p.jitterSum/(cnt-1), p.jitterMax,
+		p.lastRead.Sub(p.firstPCR)/cnt, p.jitterSum/(cnt-1), p.jitterMax,
 	)
 }
 
@@ -103,7 +103,10 @@ func (p *PCR) Loop(dvr ts.PktReader) {
 		if !af.Flags().ContainsPCR() {
 			continue
 		}
-		pcr := af.PCR()
+		pcr, err := af.PCR()
+		if err != nil {
+			continue
+		}
 
 		if p.cnt == 0 {
 			p.firstPCR = now

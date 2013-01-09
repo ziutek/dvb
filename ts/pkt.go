@@ -92,7 +92,7 @@ func (p Pkt) AF() AF {
 }
 
 // Payload returns payload bytes. It returns nil if packet dosn't contain
-// payload or adaptation_field_length byte has wrong value.
+// payload or adaptation_field_length byte has incorrect value.
 func (p Pkt) Payload() []byte {
 	f := p.Flags()
 	if !f.ContainsPayload() {
