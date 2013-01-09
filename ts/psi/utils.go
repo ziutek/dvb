@@ -46,7 +46,7 @@ func mpegCRC32(buf []byte) uint32 {
 func init() {
 	poly := uint32(0x04c11db7)
 	for i := 0; i < 256; i++ {
-		crc := uint32(i << 24)
+		crc := uint32(i) << 24
 		for j := 0; j < 8; j++ {
 			if crc&0x80000000 != 0 {
 				crc = (crc << 1) ^ poly

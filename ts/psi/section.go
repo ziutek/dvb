@@ -1,11 +1,13 @@
 package psi
 
 import (
-	"errors"
 	"github.com/ziutek/dvb/ts"
 )
 
-const SectionMaxLen = 4096
+const (
+	SectionMaxLen    = 4096
+	ISOSectionMaxLen = 1024
+)
 
 type Section []byte
 
@@ -24,7 +26,7 @@ func (s Section) SetTableId(id byte) {
 }
 
 // SyntaxIndicator returns the value of section_syntax_indicator field
-func (s Section) SyntaxIndicator() bool {
+func (s Section) GenericSyntax() bool {
 	return s[1]&0x80 != 0
 }
 
@@ -65,7 +67,7 @@ func (s Section) Len() int {
 // It panics if l < 7 or l > SectionMaxLen
 func (s Section) SetLenField(l int) {
 	if l < 4+3 || l > SectionMaxLen {
-		panic("incorrect value for section length field")
+		panic("incorrect value for section_length field")
 	}
 	l -= 3
 	h := byte(l>>8) & 0x0f
@@ -121,6 +123,15 @@ func (s Section) SetLastNumber(n byte) {
 	s[7] = n
 }
 
+// Data rturns data part of section
+func (s Section) Data() []byte {
+	end := s.Len() - 4
+	if end == -1-4 || end > len(s) {
+		panic("there is no enough data or section_length has incorrect value")
+	}
+	return s[8:end]
+}
+
 // CheckCRC returns true if s.Length() is valid and IEEE CRC32 of whole
 // section is correct
 func (s Section) CheckCRC() bool {
@@ -132,13 +143,11 @@ func (s Section) CheckCRC() bool {
 	return mpegCRC32(s[0:l-4]) == crc
 }
 
-var ErrSectionBadLength = errors.New("incorrect value of section_length field")
-
 // MakeCRC calculates CRC32 for whole section and uses it to set CRC_32 field
 func (s Section) MakeCRC() {
 	l := s.Len()
 	if l == -1 || len(s) < l {
-		panic(ErrSectionBadLength)
+		panic("bad section length to calculate CRC sum")
 	}
 	crc := mpegCRC32(s[0 : l-4])
 	encodeU32(s[l-4:l], crc)
@@ -151,11 +160,18 @@ type SectionDecoder struct {
 	limit int
 }
 
+type DecoderError string
+
+func (e DecoderError) Error() string {
+	return string(e)
+}
+
 var (
-	ErrDecodePointerField = errors.New("incorrect pointer_field")
-	ErrDecodeNoSpace      = errors.New("no free space for section decoding")
-	ErrDecodeCRC          = errors.New("section has incorrect CRC")
-	ErrDecodeTooFewData   = errors.New("too few data to decode section")
+	ErrDecodeLength  = DecoderError("incorrect value of section_length field")
+	ErrDecodePointer = DecoderError("incorrect pointer_field")
+	ErrDecodeSpace   = DecoderError("no free space for section decoding")
+	ErrDecodeCRC     = DecoderError("section has incorrect CRC")
+	ErrDecodeData    = DecoderError("too few data to decode section")
 )
 
 // Init initializes decoder to decode into s. It panics if len(s) < 8
@@ -176,6 +192,8 @@ func (d *SectionDecoder) Section() Section {
 	return d.s
 }
 
+// BUG: Loop - reimplement this to use ts.PktReader and gorutines
+//
 // Decode decodes first section from packets passed to it. All packets
 // should contain the same PID. If Decode returns true or error, the section is
 // decoded or can't be decoded but pkt can contain beginning of the next
@@ -196,7 +214,7 @@ func (d *SectionDecoder) Decode(pkt ts.Pkt) (ok bool, err error) {
 	if pkt.Flags().PayloadStart() {
 		offset = int(p[0]) + 1
 		if offset >= len(p) {
-			err = ErrDecodePointerField
+			err = ErrDecodePointer
 			return
 		}
 	}
@@ -215,7 +233,7 @@ func (d *SectionDecoder) Decode(pkt ts.Pkt) (ok bool, err error) {
 	}
 
 	if d.limit == -1 {
-		// Copy only up to section_length byte
+		// Copy only up to the section_length byte
 		n := copy(d.s[d.n:3], p)
 		d.n += n
 		if d.n < 3 {
@@ -224,11 +242,11 @@ func (d *SectionDecoder) Decode(pkt ts.Pkt) (ok bool, err error) {
 		}
 		d.limit = d.s.Len()
 		if d.limit == -1 {
-			err = ErrSectionBadLength
+			err = ErrDecodeLength
 			return
 		}
 		if d.limit > len(d.s) {
-			err = ErrDecodeNoSpace
+			err = ErrDecodeSpace
 			return
 		}
 		p = p[n:]
@@ -241,7 +259,7 @@ func (d *SectionDecoder) Decode(pkt ts.Pkt) (ok bool, err error) {
 			return
 		}
 		// New section begins in this packet
-		err = ErrDecodeTooFewData
+		err = ErrDecodeData
 		return
 	}
 
