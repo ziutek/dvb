@@ -9,10 +9,9 @@ type QPkt struct {
 	Error error
 }
 
-// PktQueue represents queue of MPEG-TS packets. PktQueue is primarily intended
-// for use by two gorutines (one writer and one reader), but can be used
-// concurently by multiple gorutines if necessary (in this case errors
-// propagation model should be well thought).
+// PktQueue represents a unidirectional queue of MPEG-TS packets. PktQueue is
+/// primarily intended for use by two gorutines (one writer and one reader),
+// but can be used concurently by multiple gorutines if necessary.
 type PktQueue chan QPkt
 
 // NewPktQueue creates new queue with internall buffer of size length.
