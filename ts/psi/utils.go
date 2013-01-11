@@ -57,3 +57,9 @@ func init() {
 		crcTable[i] = crc
 	}
 }
+
+type TemporaryError string
+
+func (e TemporaryError) Error() string {
+	return string(e)
+}
