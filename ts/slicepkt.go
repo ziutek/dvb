@@ -19,6 +19,10 @@ func (p SlicePkt) Bytes() []byte {
 	return p
 }
 
+func (p SlicePkt) Copy(pkt Pkt) {
+	copy(p, pkt.Bytes())
+}
+
 func (p SlicePkt) SyncOK() bool {
 	return p[0] == 0x47
 }

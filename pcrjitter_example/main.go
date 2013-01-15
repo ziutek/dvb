@@ -18,8 +18,8 @@ const (
 	fepath  = adpath + "/frontend0"
 	dmxpath = adpath + "/demux0"
 	dvrpath = adpath + "/dvr0"
-	//freq    = 778 // MHz
-	freq   = 674 // MHz
+	freq    = 778 // MHz
+	//freq   = 674 // MHz
 	pcrpid = 202
 )
 
@@ -86,7 +86,7 @@ func (p *PCR) Loop(dvr ts.PktReader) {
 	}
 	fmt.Println()
 
-	pkt := ts.NewPkt()
+	pkt := new(ts.Packet)
 
 	for {
 		err := dvr.ReadPkt(pkt)

@@ -7,6 +7,8 @@ type Pkt interface {
 	// Bytes returns content of the packet as byte slice. It guarantees that
 	// len of slice is equal to PktLen.
 	Bytes() []byte
+	// Copy copies conntent of Pkt.
+	Copy(Pkt)
 	// SyncOK checks does sync byte is OK.
 	SyncOK() bool
 	// Pid return value of packet identifier
