@@ -1,0 +1,79 @@
+package ts
+
+import (
+	"io"
+)
+
+// BufPkt represents TS packets used 
+type BufPkt struct {
+	pkt Pkt
+}
+
+// PktQueue represents queue of TS packets. Usually reader/writer should ues
+// ReadPkt/WritePkt method but can use read/write channels associated to this
+// queue.
+//
+// If reader uses channels it should: first write empty buffer to "empty"
+// channel and next read full buffer from "full" channel.
+//
+// If writer uses channels it should: first read empty buffer from "empty"
+// channel and next write full buffer to "full" channel.
+type PktQueue struct {
+	empty, full chan Pkt
+}
+
+// NewPktQueue creates new queue with internall buffer of size length packets.
+func NewPktQueue(length int) PktQueue {
+	q := PktQueue{
+		empty: make(chan Pkt, length),
+		full:  make(chan Pkt, length),
+	}
+	for i := 0; i < length; i++ {
+		q.empty <- NewPkt()
+	}
+	return q
+}
+
+func (q PktQueue) Len() int {
+	return len(q.empty)
+}
+
+func (q PktQueue) ReaderEmptyChan() chan<- Pkt {
+	return q.empty
+}
+
+func (q PktQueue) ReaderFullChan() <-chan Pkt {
+	return q.full
+}
+
+func (q PktQueue) WriterEmptyChan() <-chan Pkt {
+	return q.empty
+}
+
+func (q PktQueue) WriterFullChan() chan<- Pkt {
+	return q.full
+}
+
+// Close closes q. q.ReadPkt returns io.EOF error if
+// there is no more packets to read from closed queue.
+func (q PktQueue) Close() {
+	close(q.full)
+}
+
+func (q PktQueue) ReadPkt(pkt Pkt) (Pkt, error) {
+	q.empty <- pkt
+	p, ok := <-q.full
+	if !ok {
+		return pkt, io.EOF
+	}
+	return p, nil
+}
+
+func (q PktQueue) WritePkt(pkt Pkt) (Pkt, error) {
+	p, ok := <-q.empty
+	if !ok {
+		return pkt, io.EOF
+	}
+	q.full <- pkt
+	return p, nil
+}

@@ -86,10 +86,6 @@ func convertEoverflow(err error) error {
 // PktLen (usefull if bound checking is disabled at compile time).
 // ReadPkt converts os.PathError{Err: syscall.EOVERFLOW} to dvb.ErrOverflow.
 func (p *PktStream) ReadPkt(pkt Pkt) error {
-	if len(pkt) != PktLen {
-		panic("wrong MPEG-TS packet length")
-	}
-	pkt = pkt[:PktLen]
 	if p.sbStart < 0 {
 		if err := p.synchronize(); err != nil {
 			return convertEoverflow(err)
@@ -97,17 +93,17 @@ func (p *PktStream) ReadPkt(pkt Pkt) error {
 	}
 	if p.sbStart != len(p.syncBuf) {
 		// Copy packet from sync buffer
-		copy(pkt, p.syncBuf[p.sbStart:])
+		copy(pkt.Bytes(), p.syncBuf[p.sbStart:])
 		p.sbStart += PktLen
 		return nil
 	}
 	// Read packet from io.Reader
-	if _, err := io.ReadFull(p.r, pkt); err != nil {
+	if _, err := io.ReadFull(p.r, pkt.Bytes()); err != nil {
 		return convertEoverflow(err)
 	}
 	if !pkt.SyncOK() {
 		p.sbStart = -1
-		copy(p.syncBuf[:], pkt)
+		copy(p.syncBuf[:], pkt.Bytes())
 		return ErrSync
 	}
 	return nil

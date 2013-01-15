@@ -2,6 +2,7 @@ package psi
 
 import (
 	"github.com/ziutek/dvb/ts"
+	"log"
 )
 
 // SectionReader is interface for read one MPEG-TS section. len(s) should be
@@ -23,9 +24,9 @@ var (
 
 // SectionDecoder can decode section from stream of packets
 type SectionDecoder struct {
-	r   ts.PktReader
-	pkt ts.Pkt
-	b   bool
+	r        ts.PktReader
+	pkt      ts.Pkt
+	buffered bool // Not processed data in pkt
 }
 
 // NewSectionDecoder create decoder to decode sections from stream of TS packets
@@ -45,7 +46,7 @@ func (d *SectionDecoder) SetPktReader(r ts.PktReader) {
 // Reset resets internal state of decoder (discards possible buffered data for next
 // section decoding)
 func (d *SectionDecoder) Reset() {
-	d.b = false
+	d.buffered = false
 }
 
 // ReadSection decodes one section.
@@ -55,8 +56,8 @@ func (d *SectionDecoder) ReadSection(s Section) error {
 	}
 	n, limit := 0, -1
 	for {
-		if d.b {
-			d.b = false
+		if d.buffered {
+			d.buffered = false
 		} else {
 			if err := d.r.ReadPkt(d.pkt); err != nil {
 				return err
@@ -86,6 +87,7 @@ func (d *SectionDecoder) ReadSection(s Section) error {
 		} else {
 			if offset != 0 {
 				p = p[1:offset]
+				d.buffered = true
 			}
 		}
 
@@ -109,15 +111,17 @@ func (d *SectionDecoder) ReadSection(s Section) error {
 
 		n += copy(s[n:limit], p)
 
+		log.Println(s)
+		log.Println(d.pkt.Pid(), "n:", n, "limit:", limit, "offset:", offset, "buffered:", d.buffered)
 		if n < limit {
-			if offset == 0 {
-				continue
+			if d.buffered {
+				// New section begins in this packet
+				return ErrSectionData
 			}
-			// New section begins in this packet
-			return ErrSectionData
+			continue
 		}
 
-		// Whole section read
+		// Whole section was read
 		if s.CheckCRC() {
 			break
 		}

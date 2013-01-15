@@ -1,5 +1,9 @@
 package psi
 
+import (
+	"fmt"
+)
+
 const (
 	SectionMaxLen    = 4096
 	ISOSectionMaxLen = 1024
@@ -36,12 +40,12 @@ func (s Section) SetSyntaxIndicator(si bool) {
 }
 
 // PrivateIndicator returns the value of private_syntax_indicator field
-func (s Section) PrivateIndicator() bool {
+func (s Section) PrivateSyntax() bool {
 	return s[1]&0x40 != 0
 }
 
 // SetPrivateIndicator sets the value of private_syntax_indicator field
-func (s Section) SetPrivateIndicator(pi bool) {
+func (s Section) SetPrivateSyntax(pi bool) {
 	if pi {
 		s[1] |= 0x40
 	} else {
@@ -61,7 +65,7 @@ func (s Section) Len() int {
 
 // SetLen sets the value of section_length field to l-3.
 // It panics if l < 7 or l > SectionMaxLen
-func (s Section) SetLenField(l int) {
+func (s Section) SetLen(l int) {
 	if l < 4+3 || l > SectionMaxLen {
 		panic("incorrect value for section_length field")
 	}
@@ -147,4 +151,13 @@ func (s Section) MakeCRC() {
 	}
 	crc := mpegCRC32(s[0 : l-4])
 	encodeU32(s[l-4:l], crc)
+}
+
+func (s Section) String() string {
+	return fmt.Sprintf(
+		"TableId: %d Syntax: generic=%t private=%t Len: %d Version: %d "+
+			"Current: %t Number: %d/%d",
+		s.TableId(), s.GenericSyntax(), s.PrivateSyntax(), s.Len(), s.Version(),
+		s.Current(), s.Number(), s.LastNumber(),
+	)
 }
