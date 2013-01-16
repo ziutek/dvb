@@ -24,23 +24,25 @@ var (
 
 // SectionDecoder can decode section from stream of packets
 type SectionDecoder struct {
-	r        ts.PktReader
-	pkt      ts.Pkt
+	r        ts.PktReplacer
+	pkt      *ts.ArrayPkt
 	buffered bool // Not processed data in pkt
 }
 
-// NewSectionDecoder create decoder to decode sections from stream of TS packets
-// readed from r. You can use r == nil and set it later using SetPktReader method.
-func NewSectionDecoder(r ts.PktReader) *SectionDecoder {
-	d := new(SectionDecoder)
+// NewSectionDecoder creates section decoder. You can use r == nil and
+// set source of packets lather using SetPktReplacer or SetPktReader method.
+func NewSectionDecoder(r ts.PktReplacer) *SectionDecoder {
+	return &SectionDecoder{r: r, pkt: new(ts.ArrayPkt)}
+}
+
+// SetPktReplacer sets ts.PktReplacer that will be used as data source
+func (d *SectionDecoder) SetPktReplacer(r ts.PktReplacer) {
 	d.r = r
-	d.pkt = ts.NewPkt()
-	return d
 }
 
 // SetPktReader sets ts.PktReader that will be usea as data source
 func (d *SectionDecoder) SetPktReader(r ts.PktReader) {
-	d.r = r
+	d.r = ts.PktReaderAsReplacer{r}
 }
 
 // Reset resets internal state of decoder (discards possible buffered data for next
@@ -59,7 +61,8 @@ func (d *SectionDecoder) ReadSection(s Section) error {
 		if d.buffered {
 			d.buffered = false
 		} else {
-			if err := d.r.ReadPkt(d.pkt); err != nil {
+			var err error
+			if d.pkt, err = d.r.ReplacePkt(d.pkt); err != nil {
 				return err
 			}
 		}
