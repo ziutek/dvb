@@ -2,7 +2,6 @@ package psi
 
 import (
 	"github.com/ziutek/dvb/ts"
-	"log"
 )
 
 // SectionReader is interface for read one MPEG-TS section. len(s) should be
@@ -114,8 +113,6 @@ func (d *SectionDecoder) ReadSection(s Section) error {
 
 		n += copy(s[n:limit], p)
 
-		log.Println(s)
-		log.Println(d.pkt.Pid(), "n:", n, "limit:", limit, "offset:", offset, "buffered:", d.buffered)
 		if n < limit {
 			if d.buffered {
 				// New section begins in this packet
