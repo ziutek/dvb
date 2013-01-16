@@ -1,7 +1,10 @@
 package ts
 
 // SlicePkt implements Pkt interface and represents MPEG-TS packet that can be
-// a slice of some more data (eg. slice of buffer that contains more packets)
+// a slice of some more data (eg. slice of buffer that contains more packets).
+// Use it only when you can't use ArrayPkt. Assigning variable of type SlicePkt
+// to variable of type Pkt causes memory allocation (you can use *SlicePkt to
+// avoid this).
 type SlicePkt []byte
 
 // AsPkt returns beginning of buf as SlicePkt. It panics if len(buf) < PktLen.

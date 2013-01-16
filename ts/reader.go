@@ -41,21 +41,21 @@ func (p *PktStream) SetReader(r io.Reader) {
 
 // NewPktStreame is equivalent to p := new(PktStream); p.SetReader(r)
 func NewPktStream(r io.Reader) *PktStream {
-	p := new(PktStream)
-	p.SetReader(r)
-	return p
+	s := new(PktStream)
+	s.SetReader(r)
+	return s
 }
 
-func (p *PktStream) synchronize() (err error) {
-	b := p.syncBuf[:]
-	if p.sbStart == -1 {
+func (s *PktStream) synchronize() (err error) {
+	b := s.syncBuf[:]
+	if s.sbStart == -1 {
 		// First try of synchronization - read full buffer (three packets)
-		_, err = io.ReadFull(p.r, b)
-		p.sbStart = -2
+		_, err = io.ReadFull(s.r, b)
+		s.sbStart = -2
 	} else {
 		// Subsequent try of synchronization - read next packet
 		copy(b, b[PktLen:])
-		_, err = io.ReadFull(p.r, b[2*PktLen:])
+		_, err = io.ReadFull(s.r, b[2*PktLen:])
 	}
 	if err != nil {
 		return
@@ -64,9 +64,9 @@ func (p *PktStream) synchronize() (err error) {
 	for i := 0; i < PktLen; i++ {
 		if b[i] == 0x47 && b[i+PktLen] == 0x47 && b[i+2*PktLen] == 0x47 {
 			// Sync point found
-			p.sbStart = 0
+			s.sbStart = 0
 			copy(b, b[i:])
-			_, err = io.ReadFull(p.r, b[len(b)-i:])
+			_, err = io.ReadFull(s.r, b[len(b)-i:])
 			return
 		}
 	}
@@ -85,28 +85,34 @@ func convertEoverflow(err error) error {
 // and tries to synchronize. ReadPkt check len(pkt) and panics if it isn't
 // PktLen (usefull if bound checking is disabled at compile time).
 // ReadPkt converts os.PathError{Err: syscall.EOVERFLOW} to dvb.ErrOverflow.
-func (p *PktStream) ReadPkt(pkt Pkt) error {
-	if p.sbStart < 0 {
-		if err := p.synchronize(); err != nil {
+func (s *PktStream) ReadPkt(pkt Pkt) error {
+	if s.sbStart < 0 {
+		if err := s.synchronize(); err != nil {
 			return convertEoverflow(err)
 		}
 	}
-	if p.sbStart != len(p.syncBuf) {
+	if s.sbStart != len(s.syncBuf) {
 		// Copy packet from sync buffer
-		copy(pkt.Bytes(), p.syncBuf[p.sbStart:])
-		p.sbStart += PktLen
+		copy(pkt.Bytes(), s.syncBuf[s.sbStart:])
+		s.sbStart += PktLen
 		return nil
 	}
 	// Read packet from io.Reader
-	if _, err := io.ReadFull(p.r, pkt.Bytes()); err != nil {
+	if _, err := io.ReadFull(s.r, pkt.Bytes()); err != nil {
 		return convertEoverflow(err)
 	}
 	if !pkt.SyncOK() {
-		p.sbStart = -1
-		copy(p.syncBuf[:], pkt.Bytes())
+		s.sbStart = -1
+		copy(s.syncBuf[:], pkt.Bytes())
 		return ErrSync
 	}
 	return nil
+}
+
+// Replace works like ReadPkt but implements PktReplacer interface
+func (s *PktStream) Replace(pkt *ArrayPkt) (*ArrayPkt, error) {
+	err := s.ReadPkt(pkt)
+	return pkt, err
 }
 
 // Reader wraps PktReader to implement a standard io.Reader interface.

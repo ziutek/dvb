@@ -1,54 +1,57 @@
 package ts
 
-// Packet implements Pkt interface and represents independent array of
-// bytes that contains one MPEG-TS packet.
-type Packet [PktLen]byte
+// ArrayPkt implements Pkt interface and represents array of bytes that
+// contains one MPEG-TS packet.
+type ArrayPkt [PktLen]byte
 
 // Slice returns refference to the content of p as SlicePkt
-func (p *Packet) Slice() SlicePkt {
+func (p *ArrayPkt) Slice() SlicePkt {
 	return SlicePkt(p[:])
 }
 
-func (p *Packet) Bytes() []byte {
+func (p *ArrayPkt) Bytes() []byte {
 	return p[:]
 }
 
-func (p *Packet) Copy(pkt Pkt) {
+func (p *ArrayPkt) Copy(pkt Pkt) {
 	copy(p[:], pkt.Bytes())
 }
 
-func (p *Packet) SyncOK() bool {
+func (p *ArrayPkt) SyncOK() bool {
 	return p[0] == 0x47
 }
 
-func (p *Packet) Pid() uint16 {
+func (p *ArrayPkt) Pid() uint16 {
 	return uint16(p[1]&0x1f)<<8 | uint16(p[2])
 }
 
-func (p *Packet) CC() byte {
+func (p *ArrayPkt) CC() byte {
 	return p[3] & 0xf
 }
 
-func (p *Packet) Flags() PktFlags {
+func (p *ArrayPkt) Flags() PktFlags {
 	return p.Slice().Flags()
 }
 
-func (p *Packet) AF() AF {
+func (p *ArrayPkt) AF() AF {
 	return p.Slice().AF()
 }
 
-func (p *Packet) Payload() []byte {
+func (p *ArrayPkt) Payload() []byte {
 	return p.Slice().Payload()
 }
 
-// PktSwapper is interface to swap/exchange one independent packet to
-// another one. If SwapPkt returns an error it is guaranteed that r == p so
-// you can safely use it in this way:
+// Replacer is interface to replace one packet to another one. After Replace
+// old content of p should not be used any more by caller. If Replace returns
+// an error it is guaranteed that r == p (but content of p can be modified).
+// Generally Replace need to be used in this way:
 //
-//    p, err = q.SwapPkt(p)
+//    p, err = q.Replace(p)
 //    if err != nil {
 //        ...
 //    }
-type PacketSwapper interface {
-	Swap(p *Packet) (r *Packet, e error)
+type PktReplacer interface {
+	// Replace can return any error but if it returns ErrSync or
+	// dvb.ErrOverflow you can try to replace packet one more time.
+	Replace(p *ArrayPkt) (r *ArrayPkt, e error)
 }
