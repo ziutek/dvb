@@ -1,7 +1,6 @@
 package ts
 
 import (
-	"errors"
 	"github.com/ziutek/dvb"
 	"io"
 	"os"
@@ -10,10 +9,10 @@ import (
 
 var (
 	// ErrSync means a lost of MPEG-TS synchronization.
-	ErrSync = errors.New("MPEG-TS synchronization error")
+	ErrSync = dvb.TemporaryError("MPEG-TS synchronization error")
 )
 
-// PktReader is an interface which can be used to read data into provided packet
+// PktReader is an interface that wraps the ReadPkt method.
 type PktReader interface {
 	// ReadPkt reads one MPEG-TS packet.
 	// If it returns ErrSync or dvb.ErrOverflow you can try to Read next
@@ -21,8 +20,8 @@ type PktReader interface {
 	ReadPkt(Pkt) error
 }
 
-// PktReplacer is an interface which can be used to replace one array packet to
-// another one. After ReplacePkt caller should not reffer to p content any more.
+// PktReplacer is an interface that wraps the ReplacePkt method. After
+// ReplacePkt call caller should not reffer to p content any more.
 // If ReplacePkt returns an error it is guaranteed that r == p (but content
 // reffered by p can be modified). Generally ReplacePkt should be used in this
 // way:

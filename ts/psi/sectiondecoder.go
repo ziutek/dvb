@@ -1,24 +1,16 @@
 package psi
 
 import (
+	"github.com/ziutek/dvb"
 	"github.com/ziutek/dvb/ts"
 )
 
-// SectionReader is interface for read one MPEG-TS section. len(s) should be
-// equal to MaxSectionLen or MaxISOSectionLen (if you read standard PSI tables).
-// You can use shorter s (but not shorter that 8 bytes) if you are sure that
-// read section should fit in it. If ReadSection returned error of TemporaryError
-// type you can try read next section.
-type SectionReader interface {
-	ReadSection(s Section) error
-}
-
 var (
-	ErrSectionLength  = TemporaryError("incorrect value of section_length field")
-	ErrSectionPointer = TemporaryError("incorrect pointer_field")
-	ErrSectionSpace   = TemporaryError("no free space for section decoding")
-	ErrSectionCRC     = TemporaryError("section has incorrect CRC")
-	ErrSectionData    = TemporaryError("too few data to decode section")
+	ErrSectionLength  = dvb.TemporaryError("incorrect value of section_length field")
+	ErrSectionPointer = dvb.TemporaryError("incorrect pointer_field")
+	ErrSectionSpace   = dvb.TemporaryError("no free space for section decoding")
+	ErrSectionCRC     = dvb.TemporaryError("section has incorrect CRC")
+	ErrSectionData    = dvb.TemporaryError("too few data to decode section")
 )
 
 // SectionDecoder can decode section from stream of packets
@@ -44,8 +36,8 @@ func (d *SectionDecoder) SetPktReader(r ts.PktReader) {
 	d.r = ts.PktReaderAsReplacer{r}
 }
 
-// Reset resets internal state of decoder (discards possible buffered data for next
-// section decoding)
+// Reset resets internal state of decoder (discards possible buffered data for
+// next section decoding)
 func (d *SectionDecoder) Reset() {
 	d.buffered = false
 }
