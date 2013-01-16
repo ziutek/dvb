@@ -13,6 +13,7 @@ var (
 	ErrSync = errors.New("MPEG-TS synchronization error")
 )
 
+// PktReader is an interface which can be used to read data into provided packet
 type PktReader interface {
 	// ReadPkt reads one MPEG-TS packet.
 	// If it returns ErrSync or dvb.ErrOverflow you can try to Read next
@@ -20,9 +21,38 @@ type PktReader interface {
 	ReadPkt(Pkt) error
 }
 
-// PktStream wraps any io.Reader interface and returns PktReader implementation
-// for stream of bytes. Internally it doesn't allocate any memory so is friendly
-// for real-time applications (it doesn't cause GC to run).
+// PktReplacer is an interface which can be used to replace one array packet to
+// another one. After ReplacePkt caller should not reffer to p content any more.
+// If ReplacePkt returns an error it is guaranteed that r == p (but content
+// reffered by p can be modified). Generally ReplacePkt should be used in this
+// way:
+//
+//    p, err = q.ReplacePkt(p)
+//    if err != nil {
+//        ...
+//    }
+type PktReplacer interface {
+	// ReplacePkt consumes packet reffered by p an returns other packet reffered
+	// by r.
+	// If it returns ErrSync or dvb.ErrOverflow you can try to call ReplacePkt
+	// one more time.
+	ReplacePkt(p *ArrayPkt) (r *ArrayPkt, e error)
+}
+
+// PktReaderAsReplacer converts any PktReader to PktReplacer
+type PktReaderAsReplacer struct {
+	PktReader
+}
+
+func (r PktReaderAsReplacer) ReplacePkt(p *ArrayPkt) (*ArrayPkt, error) {
+	err := r.PktReader.ReadPkt(p)
+	return p, err
+}
+
+// PktStream wraps any io.Reader interface and returns PktReader and
+// PktReplacer implementation for read MPEG-TS packets from stream of bytes.
+// Internally it doesn't allocate any memory so is friendly for real-time
+// applications (it doesn't cause GC to run).
 //
 // Using PktStream you can start read at any point in stream. If the start point
 // doesn't match a beginning of a packet, PktReader returns ErrSync and
@@ -109,14 +139,14 @@ func (s *PktStream) ReadPkt(pkt Pkt) error {
 	return nil
 }
 
-// Replace works like ReadPkt but implements PktReplacer interface
-func (s *PktStream) Replace(pkt *ArrayPkt) (*ArrayPkt, error) {
-	err := s.ReadPkt(pkt)
-	return pkt, err
+// ReplacePkt works like ReadPkt but implements PktReplacer interface.
+func (s *PktStream) ReplacePkt(p *ArrayPkt) (*ArrayPkt, error) {
+	err := s.ReadPkt(p)
+	return p, err
 }
 
-// Reader wraps PktReader to implement a standard io.Reader interface.
-// Internally it doesn't allocate any memory so it is friendly
+// Reader wraps PktReplacer or PktReader to implement a standard io.Reader
+// interface. Internally it doesn't allocate any memory so it is friendly
 // for real-time applications (it doesn't cause GC to run).
 type Reader struct {
 	p   PktReader
@@ -125,18 +155,11 @@ type Reader struct {
 }
 
 // SetPktReader sets new PktReader as packets source. If internal buffer
-// contains some data from previous source they will be returned before any new read from
-// new source.
+// contains some data from previous source they will be returned before any new
+// read from new source.
 func (r *Reader) SetPktReader(p PktReader) {
 	r.p = p
 	r.i = PktLen
-}
-
-// NewReaders is equivalent to r := new(Reader); r.SetPktReader(p)
-func NewReader(p PktReader) *Reader {
-	r := new(Reader)
-	r.SetPktReader(p)
-	return r
 }
 
 // Read allow to read from MPEG-TS packet stream as from ordinary byte stream.

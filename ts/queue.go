@@ -38,14 +38,14 @@ func (q PktQueue) WritePart() PktWriteQueue {
 }
 
 // PacketReadQueue represenst read part of PktQueue. If reader uses raw
-// channels insteed of Replace method it should write empty packet to Empty
+// channels insteed of ReplacePkt method it should write empty packet to Empty
 // channel and next read full packet from Full channel.
 type PktReadQueue struct {
 	Empty chan<- *ArrayPkt
 	Full  <-chan *ArrayPkt
 }
 
-func (q PktReadQueue) Replace(pkt *ArrayPkt) (*ArrayPkt, error) {
+func (q PktReadQueue) ReplacePkt(pkt *ArrayPkt) (*ArrayPkt, error) {
 	q.Empty <- pkt
 	p, ok := <-q.Full
 	if !ok {
@@ -55,7 +55,7 @@ func (q PktReadQueue) Replace(pkt *ArrayPkt) (*ArrayPkt, error) {
 }
 
 // PacketWriteQueue represenst write part of PktQueue. If writer uses raw
-// channels insteed of Replace method it should read empty packet from Empty
+// channels insteed of ReplacePkt method it should read empty packet from Empty
 // channel and next write full packet to Full channel.
 type PktWriteQueue struct {
 	Empty <-chan *ArrayPkt
@@ -68,7 +68,7 @@ func (q PktWriteQueue) Close() {
 	close(q.Full)
 }
 
-func (q PktWriteQueue) Replace(pkt *ArrayPkt) (*ArrayPkt, error) {
+func (q PktWriteQueue) ReplacePkt(pkt *ArrayPkt) (*ArrayPkt, error) {
 	p := <-q.Empty
 	q.Full <- pkt
 	return p, nil

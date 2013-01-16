@@ -40,18 +40,3 @@ func (p *ArrayPkt) AF() AF {
 func (p *ArrayPkt) Payload() []byte {
 	return p.Slice().Payload()
 }
-
-// Replacer is interface to replace one packet to another one. After Replace
-// old content of p should not be used any more by caller. If Replace returns
-// an error it is guaranteed that r == p (but content of p can be modified).
-// Generally Replace need to be used in this way:
-//
-//    p, err = q.Replace(p)
-//    if err != nil {
-//        ...
-//    }
-type PktReplacer interface {
-	// Replace can return any error but if it returns ErrSync or
-	// dvb.ErrOverflow you can try to replace packet one more time.
-	Replace(p *ArrayPkt) (r *ArrayPkt, e error)
-}
