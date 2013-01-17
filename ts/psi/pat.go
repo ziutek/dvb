@@ -72,7 +72,7 @@ func (d *PATDecoder) ReadPAT(p *PAT) error {
 		}
 		rd |= uint64(1) << (n - 1)
 
-		muxId := decodeU16(s[3:5])
+		muxId := s.TableIdExt()
 		if p.Progs == nil {
 			// Initial state
 			p.MuxId = muxId
