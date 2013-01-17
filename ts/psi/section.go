@@ -25,6 +25,16 @@ func (s Section) SetTableId(id byte) {
 	s[0] = id
 }
 
+// TableIdExt returns the value of table_id_extension
+func (s Section) TableIdExt() uint16 {
+	return decodeU16(s[3:5])
+}
+
+// Set TableIdExt sets the value of table_id_extension
+func (s Section) SetTableIdExt(id uint16) {
+	encodeU16(s[3:5], id)
+}
+
 // SyntaxIndicator returns the value of section_syntax_indicator field
 func (s Section) GenericSyntax() bool {
 	return s[1]&0x80 != 0
