@@ -7,14 +7,8 @@ import (
 type PAT struct {
 	MuxId   uint16
 	Version byte
-	Current bool
 	Progs   map[uint16]uint16
-}
-
-func NewPAT() *PAT {
-	p := new(PAT)
-	p.Progs = make(map[uint16]uint16)
-	return p
+	Valid   bool
 }
 
 func clearProgs(progs map[uint16]uint16) {
@@ -26,10 +20,11 @@ func clearProgs(progs map[uint16]uint16) {
 var (
 	ErrPATSectionSyntax = dvb.TemporaryError("incorrect PAT section syntax")
 	ErrPATSectionNumber = dvb.TemporaryError("incorrect PAT section number")
-	ErrPATSectionMatch  = dvb.TemporaryError("subsequent PAT section doesn't match first one")
+	ErrPATMuxId         = dvb.TemporaryError("incorrect PAT mux id")
 	ErrPATDataLength    = dvb.TemporaryError("incorrect PAT data length")
 )
 
+// PATDecoder decodes PAT data from stream of sections.
 type PATDecoder struct {
 	s Section
 	r SectionReader
@@ -43,41 +38,54 @@ func (d *PATDecoder) SetSectionReader(r SectionReader) {
 	d.r = r
 }
 
-// Update updates p using r to read data. Returns true if there are any changes
-// in p.
+// ReadPAT updates p using data from stream of sections provided by internal
+// SectionReader. Only sections with Current flag set are processed.
+// TODO: This implementation assumes PAT occupies no more than 64 sections
+// (standard permits 256 sections). Rewrite it to permit 256 sections.
 func (d *PATDecoder) ReadPAT(p *PAT) error {
-	var n, maxN byte
+	var rd uint64
 	s := d.s
 
-	for n <= maxN {
+	for {
 		if err := d.r.ReadSection(s); err != nil {
 			return err
+		}
+		if !s.Current() {
+			continue
 		}
 
 		if s.TableId() != 0 || !s.GenericSyntax() {
 			return ErrPATSectionSyntax
 		}
 
+		// Always update maxN because sometimes provider update PAT content
+		// without update version. In this case we can block waiting for section
+		// number that will never appear.
+		maxN := s.LastNumber()
+		if maxN > 63 {
+			maxN = 63 // BUG: this doesn't permit more than 64 sections
+		}
+		tord := uint64(1) << (maxN - 1)
+		n := s.Number()
+		if n > maxN {
+			return ErrPATSectionNumber
+		}
+		rd |= uint64(1) << (n - 1)
+
 		muxId := decodeU16(s[3:5])
-		if n == 0 {
-			// Initial state: wait for section_number == 0
-			if s.Number() != 0 {
-				continue
-			}
+		if p.Progs == nil {
+			// Initial state
 			p.MuxId = muxId
 			p.Version = s.Version()
-			p.Current = s.Current()
-			clearProgs(p.Progs)
-			n = 1
-			maxN = s.LastNumber()
+			p.Progs = make(map[uint16]uint16)
 		} else {
-			if s.Number() != n || s.LastNumber() != maxN {
-				return ErrPATSectionNumber
+			if p.Version != s.Version() {
+				p.MuxId = muxId
+				clearProgs(p.Progs)
+				p.Valid = false
+			} else if p.MuxId != muxId {
+				return ErrPATMuxId
 			}
-			if muxId != p.MuxId || p.Version != s.Version() || p.Current != s.Current() {
-				return ErrPATSectionMatch
-			}
-			n++
 		}
 
 		d := s.Data()
@@ -87,7 +95,12 @@ func (d *PATDecoder) ReadPAT(p *PAT) error {
 		for i := 0; i < len(d); i += 4 {
 			p.Progs[decodeU16(d[i:i+2])] = decodeU16(d[i+2:i+4]) & 0x1fff
 		}
+
+		if rd&tord == tord {
+			break
+		}
 	}
 
+	p.Valid = true
 	return nil
 }
