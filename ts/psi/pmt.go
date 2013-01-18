@@ -1,39 +1,74 @@
 package psi
 
-type PMT struct {
-	s Section
-}
+import (
+	"github.com/ziutek/dvb"
+)
+
+type PMT Section
 
 func NewPMT() PMT {
-	return PMT{NewSection(ISOSectionMaxLen)}
+	return PMT(NewSection(ISOSectionMaxLen))
 }
 
 func (p PMT) Version() byte {
-	return p.s.Version()
+	return Section(p).Version()
 }
 
 func (p PMT) Current() bool {
-	return p.s.Current()
+	return Section(p).Current()
 }
 
 func (p PMT) ProgId() uint16 {
-	return p.s.TableIdExt()
+	return Section(p).TableIdExt()
 }
 
 func (p PMT) PCRPid() uint16 {
-	return decodeU16(p.s.Data()[0:2]) & 0x1fff
+	return decodeU16(Section(p).Data()[0:2]) & 0x1fff
 }
 
 func (p PMT) progInfoLen() int {
-	return int(decodeU16(p.s.Data()[2:4]) & 0x0fff)
+	return int(decodeU16(Section(p).Data()[2:4]) & 0x0fff)
 }
 
 func (p PMT) ProgramInfo() DescriptorList {
-	return DescriptorList(p.s.Data()[4 : 4+p.progInfoLen()])
+	return DescriptorList(Section(p).Data()[4 : 4+p.progInfoLen()])
 }
 
-func (p PMT) StreamsInfo() ESInfoList {
-	return ESInfoList(p.s.Data()[4+p.progInfoLen():])
+func (p PMT) ESInfo() ESInfoList {
+	return ESInfoList(Section(p).Data()[4+p.progInfoLen():])
+}
+
+var (
+	ErrPMTSectionSyntax = dvb.TemporaryError("incorrect PMT section syntax")
+	ErrPMTProgInfoLen   = dvb.TemporaryError("incorrect PMT program info length")
+)
+
+type PMTDecoder struct {
+	r SectionReader
+}
+
+func NewPMTDecoder(r SectionReader) *PMTDecoder {
+	return &PMTDecoder{r}
+}
+
+func (d *PMTDecoder) SetSectionReader(r SectionReader) {
+	d.r = r
+}
+
+func (d *PMTDecoder) ReadPMT(p PMT) error {
+	s := Section(p)
+	err := d.r.ReadSection(s)
+	if err != nil {
+		return err
+	}
+	if s.TableId() != 2 || !s.GenericSyntax() || s.Number() != 0 ||
+		s.LastNumber() != 0 {
+		return ErrPMTSectionSyntax
+	}
+	if p.progInfoLen()+4 > len(s.Data()) {
+
+	}
+	return nil
 }
 
 type ESInfo []byte

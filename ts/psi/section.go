@@ -40,8 +40,8 @@ func (s Section) GenericSyntax() bool {
 	return s[1]&0x80 != 0
 }
 
-// SetSyntaxIndicator sets the value of section_syntax_indicator field
-func (s Section) SetSyntaxIndicator(si bool) {
+// SetGenericSyntax sets the value of section_syntax_indicator field
+func (s Section) SetGenericSyntax(si bool) {
 	if si {
 		s[1] |= 0x80
 	} else {
@@ -54,7 +54,7 @@ func (s Section) PrivateSyntax() bool {
 	return s[1]&0x40 != 0
 }
 
-// SetPrivateIndicator sets the value of private_syntax_indicator field
+// SetPrivateSyntax sets the value of private_syntax_indicator field
 func (s Section) SetPrivateSyntax(pi bool) {
 	if pi {
 		s[1] |= 0x40
@@ -113,22 +113,22 @@ func (s Section) SetCurrent(c bool) {
 	}
 }
 
-// Number returns the vale of section_number field
+// Number returns the value of section_number field
 func (s Section) Number() byte {
 	return s[6]
 }
 
-// SetNumber sets the vale of section_number field
+// SetNumber sets the value of section_number field
 func (s Section) SetNumber(n byte) {
 	s[6] = n
 }
 
-// LastNumber returns the vale of last_section_number field
+// LastNumber returns the value of last_section_number field
 func (s Section) LastNumber() byte {
 	return s[7]
 }
 
-// SetLastNumber sets the vale of last_section_number field
+// SetLastNumber sets the value of last_section_number field
 func (s Section) SetLastNumber(n byte) {
 	s[7] = n
 }
@@ -142,7 +142,7 @@ func (s Section) Data() []byte {
 	return s[8:end]
 }
 
-// CheckCRC returns true if s.Length() is valid and IEEE CRC32 of whole
+// CheckCRC returns true if s.Length() is valid and CRC32 of whole
 // section is correct
 func (s Section) CheckCRC() bool {
 	l := s.Len()
