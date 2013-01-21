@@ -40,6 +40,7 @@ func (d *PATDecoder) SetSectionReader(r SectionReader) {
 
 // ReadPAT updates p using data from stream of sections provided by internal
 // SectionReader. Only sections with Current flag set are processed.
+// If ReadPAT returns error p.Valid == false otherwise p.Valid == true.
 // TODO: This implementation assumes PAT occupies no more than 64 sections
 // (standard permits 256 sections). Rewrite it to permit 256 sections.
 func (d *PATDecoder) ReadPAT(p *PAT) error {
