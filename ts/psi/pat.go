@@ -5,9 +5,9 @@ import (
 )
 
 type PAT struct {
+	Progs   map[uint16]uint16
 	MuxId   uint16
 	Version byte
-	Progs   map[uint16]uint16
 	Valid   bool
 }
 
@@ -38,12 +38,12 @@ func (d *PATDecoder) SetSectionReader(r SectionReader) {
 	d.r = r
 }
 
-// ReadPAT updates p using data from stream of sections provided by internal
+// ReadPAT updates pat using data from stream of sections provided by internal
 // SectionReader. Only sections with Current flag set are processed.
-// If ReadPAT returns error p.Valid == false otherwise p.Valid == true.
+// If ReadPAT returns error pat.Valid == false, otherwise pat.Valid == true.
 // TODO: This implementation assumes PAT occupies no more than 64 sections
 // (standard permits 256 sections). Rewrite it to permit 256 sections.
-func (d *PATDecoder) ReadPAT(p *PAT) error {
+func (d *PATDecoder) ReadPAT(pat *PAT) error {
 	var rd uint64
 	s := d.s
 
@@ -74,17 +74,17 @@ func (d *PATDecoder) ReadPAT(p *PAT) error {
 		rd |= uint64(1) << (n - 1)
 
 		muxId := s.TableIdExt()
-		if p.Progs == nil {
+		if pat.Progs == nil {
 			// Initial state
-			p.MuxId = muxId
-			p.Version = s.Version()
-			p.Progs = make(map[uint16]uint16)
+			pat.MuxId = muxId
+			pat.Version = s.Version()
+			pat.Progs = make(map[uint16]uint16)
 		} else {
-			if p.Version != s.Version() {
-				p.MuxId = muxId
-				clearProgs(p.Progs)
-				p.Valid = false
-			} else if p.MuxId != muxId {
+			if pat.Version != s.Version() {
+				pat.MuxId = muxId
+				clearProgs(pat.Progs)
+				pat.Valid = false
+			} else if pat.MuxId != muxId {
 				return ErrPATMuxId
 			}
 		}
@@ -94,7 +94,7 @@ func (d *PATDecoder) ReadPAT(p *PAT) error {
 			return ErrPATDataLength
 		}
 		for i := 0; i < len(d); i += 4 {
-			p.Progs[decodeU16(d[i:i+2])] = decodeU16(d[i+2:i+4]) & 0x1fff
+			pat.Progs[decodeU16(d[i:i+2])] = decodeU16(d[i+2:i+4]) & 0x1fff
 		}
 
 		if rd&tord == tord {
@@ -102,6 +102,6 @@ func (d *PATDecoder) ReadPAT(p *PAT) error {
 		}
 	}
 
-	p.Valid = true
+	pat.Valid = true
 	return nil
 }
