@@ -39,8 +39,8 @@ func (q *PktQueue) WritePart() *PktWriteQueue {
 
 // PacketReadQueue represenst read part of PktQueue and implements PktReplacer
 // interface. If reader uses raw channels insteed of ReplacePkt method it
-// should write empty packet to Empty channel and next read full packet from
-// Full channel.
+// should first read full packet from the Full channel and next write empty
+// packet to the Empty channel.
 type PktReadQueue PktQueue
 
 // Empty returns a channel that can be used to pass empty packets to q.
@@ -55,11 +55,11 @@ func (q *PktReadQueue) Full() <-chan *ArrayPkt {
 
 // ReplacePkt pass empty pkt to q and obtain full packet from q.
 func (q *PktReadQueue) ReplacePkt(pkt *ArrayPkt) (*ArrayPkt, error) {
-	q.empty <- pkt
 	p, ok := <-q.full
 	if !ok {
 		return pkt, io.EOF
 	}
+	q.empty <- pkt
 	return p, nil
 }
 
