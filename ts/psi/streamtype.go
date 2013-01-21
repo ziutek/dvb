@@ -8,8 +8,8 @@ const (
 	MPEG2Video
 	MPEG1Audio
 	MPEG2Audio
-	PrivateSect
-	PrivatePES
+	PrivSect
+	PrivPES
 	MHEG
 	DSMCC
 	H222_1
@@ -39,8 +39,8 @@ var streamTypes = []string{
 	"MPEG2Video",
 	"MPEG1Audio",
 	"MPEG2Audio",
-	"PrivateSect",
-	"PrivatePES",
+	"PrivSect",
+	"PrivPES",
 	"MHEG",
 	"DSMCC",
 	"H222_1",

@@ -22,7 +22,7 @@ func (p PMT) ProgId() uint16 {
 	return Section(p).TableIdExt()
 }
 
-func (p PMT) PCRPid() uint16 {
+func (p PMT) PidPCR() uint16 {
 	return decodeU16(Section(p).Data()[0:2]) & 0x1fff
 }
 
@@ -66,7 +66,7 @@ func (d *PMTDecoder) ReadPMT(p PMT) error {
 		return ErrPMTSectionSyntax
 	}
 	if p.progInfoLen()+4 > len(s.Data()) {
-
+		return ErrPMTProgInfoLen
 	}
 	return nil
 }
@@ -103,7 +103,7 @@ func (il ESInfoList) Pop() (i ESInfo, ril ESInfoList) {
 	if len(il) < l {
 		return
 	}
-	i = ESInfo(il[5:l])
+	i = ESInfo(il[:l])
 	ril = il[l:]
 	return
 }
