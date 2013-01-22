@@ -23,6 +23,10 @@ func NewTableReader(r SectionReader, tableId byte, current bool) *TableReader {
 	return &TableReader{r: r, tableId: tableId, current: current}
 }
 
+func (tr *TableReader) SetSectionReader(r SectionReader) {
+	tr.r = r
+}
+
 // ReadTableSecion returns true if it reads all sections for specified table. It
 // can read some sections from previous table so you should check Version and
 // TableIdExt.
