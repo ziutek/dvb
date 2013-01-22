@@ -30,6 +30,9 @@ func (tr *TableReader) SetSectionReader(r SectionReader) {
 // ReadTableSecion returns true if it reads all sections for specified table. It
 // can read some sections from previous table so you should check Version and
 // TableIdExt.
+// TODO: This implementation assumes that PSI table occupies no more than
+// 64 sections (standard permits 256 sections). Rewrite it to permit 256
+// sections.
 func (tr *TableReader) ReadTableSection(s Section) (done bool, err error) {
 	if err = tr.r.ReadSection(s); err != nil {
 		return

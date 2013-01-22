@@ -11,9 +11,7 @@ type SDT struct {
 	Valid    bool
 }
 
-var (
-	ErrSDTSectionSyntax = dvb.TemporaryError("incorrect SDT section syntax")
-)
+var ErrSDTSectionSyntax = dvb.TemporaryError("incorrect SDT section syntax")
 
 type SDTDecoder struct {
 	s      Section
@@ -36,8 +34,6 @@ func NewSDTDecoder(r SectionReader, actual bool) *SDTDecoder {
 // ReadSDT updates sdt using data from stream of sections provided by internal
 // SectionReader. Only sections with Current flag set are processed.
 // If ReadSDT returns error sdt.Valid == false, otherwise sdt.Valid == true.
-// TODO: This implementation assumes SDT occupies no more than 64 sections
-// (standard permits 256 sections). Rewrite it to permit 256 sections.
 func (d *SDTDecoder) ReadSDT(sdt *SDT) error {
 	s := d.s
 	for {
