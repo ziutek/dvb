@@ -161,29 +161,30 @@ const (
 	SysTURBO
 )
 
+var dsn = []string{
+	"Undefined",
+	"DVB-C Annex AC",
+	"DVB-C Annex B",
+	"DVB-T",
+	"DSS",
+	"DVB-S",
+	"DVB-S2",
+	"DVB-H",
+	"ISDB-T",
+	"ISDB-S",
+	"ISDB-C",
+	"ATSC",
+	"ATSC-MH",
+	"DMBT-H",
+	"CMMB",
+	"DAB",
+	"DVB-T2",
+	"TURBO",
+}
+
 func (ds DeliverySystem) String() string {
-	dsn := []string{
-		"Undefined",
-		"DVB-C Annex AC",
-		"DVB-C Annex B",
-		"DVB-T",
-		"DSS",
-		"DVB-S",
-		"DVB-S2",
-		"DVB-H",
-		"ISDB-T",
-		"ISDB-S",
-		"ISDB-C",
-		"ATSC",
-		"ATSC-MH",
-		"DMBT-H",
-		"CMMB",
-		"DAB",
-		"DVB-T2",
-		"TURBO",
-	}
 	if ds > DeliverySystem(len(dsn)) {
-		return "Unknown"
+		return "unknown"
 	}
 	return dsn[ds]
 }

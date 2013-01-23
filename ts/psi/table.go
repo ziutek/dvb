@@ -26,6 +26,10 @@ func (t *Table) check() {
 	}
 }
 
+func (t *Table) Reset(){
+	t.m = 0
+}
+
 func (t *Table) TableId() byte {
 	t.check()
 	return t.ss[0].TableId()

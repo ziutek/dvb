@@ -43,21 +43,9 @@ var (
 	ErrPMTProgInfoLen   = dvb.TemporaryError("incorrect PMT program info length")
 )
 
-type PMTDecoder struct {
-	r SectionReader
-}
-
-func NewPMTDecoder(r SectionReader) *PMTDecoder {
-	return &PMTDecoder{r}
-}
-
-func (d *PMTDecoder) SetSectionReader(r SectionReader) {
-	d.r = r
-}
-
-func (d *PMTDecoder) ReadPMT(p PMT) error {
+func (p PMT) Update(r SectionReader) error {
 	s := Section(p)
-	err := d.r.ReadSection(s)
+	err := r.ReadSection(s)
 	if err != nil {
 		return err
 	}
