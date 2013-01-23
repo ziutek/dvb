@@ -12,9 +12,9 @@ func (d Descriptor) Data() []byte {
 
 type DescriptorList []byte
 
-// Pop returns first descriptor in d and remaining descriptors in rdl. If an
-// error occurs it returns d == nil. If there is no more descriptors
-// len(rdl) == 0
+// Pop returns first descriptor in d and remaining descriptors in rdl.
+// If there is no more descriptors len(rdl) == 0. If an error occurs
+// d == nil.
 func (dl DescriptorList) Pop() (d Descriptor, rdl DescriptorList) {
 	if len(dl) < 2 {
 		return

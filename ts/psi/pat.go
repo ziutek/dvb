@@ -1,80 +1,103 @@
 package psi
 
 import (
-	"github.com/ziutek/dvb"
+	"github.com/ziutek/dvb/ts"
 )
 
-type PAT struct {
-	Progs   map[uint16]uint16
-	MuxId   uint16
-	Version byte
-	Valid   bool
+type PAT Table
+
+func NewPAT() *PAT {
+	return (*PAT)(NewTable(ISOSectionMaxLen))
 }
 
-func clearProgs(progs map[uint16]uint16) {
-	for k := range progs {
-		delete(progs, k)
-	}
+func (pat *PAT) t() *Table {
+	return (*Table)(pat)
 }
 
-var ErrPATDataLength = dvb.TemporaryError("incorrect PAT data length")
-
-// PATDecoder decodes PAT data from stream of sections.
-type PATDecoder struct {
-	s Section
-	r *TableReader
+func (pat *PAT) Version() byte {
+	return pat.t().Version()
 }
 
-func NewPATDecoder(r SectionReader) *PATDecoder {
-	return &PATDecoder{
-		s: NewSection(ISOSectionMaxLen),
-		r: NewTableReader(r, 0, true),
-	}
+func (pat *PAT) Current() bool {
+	return pat.t().Current()
 }
 
-func (d *PATDecoder) SetSectionReader(r SectionReader) {
-	d.r.SetSectionReader(r)
+func (pat *PAT) MuxId() uint16 {
+	return pat.t().TableIdExt()
 }
 
-// ReadPAT updates pat using data from stream of sections provided by internal
-// SectionReader. Only sections with Current flag set are processed.
-// If ReadPAT returns error pat.Valid == false, otherwise pat.Valid == true.
-func (d *PATDecoder) ReadPAT(pat *PAT) error {
-	s := d.s
+// Update reads next PAT from r
+func (pat *PAT) Update(r SectionReader, current bool) error {
+	return pat.t().Update(r, 0, current)
+}
 
-	for {
-		done, err := d.r.ReadTableSection(s)
-		if err != nil {
-			return err
+// ProgramList returns list of programs
+func (pat *PAT) ProgramList() ProgramList {
+	return ProgramList{ss: pat.t().Sections()}
+}
+
+// FindPMT returns PMT PID for given progid. If there is no such progId it
+// returns pid == ts.NullPid. If an error occurs pid > ts.NullPid.
+func (pat *PAT) FindPMT(progid uint16) (pmtpid uint16) {
+	pl := pat.ProgramList()
+	for !pl.IsEmpty() {
+		var id uint16
+		id, pmtpid, pl = pl.Pop()
+		if pmtpid > ts.NullPid {
+			return // Error
 		}
-
-		muxId := s.TableIdExt()
-		version := s.Version()
-		if pat.Progs == nil {
-			// Initial state
-			pat.MuxId = muxId
-			pat.Version = version
-			pat.Progs = make(map[uint16]uint16)
-		} else if pat.Version != s.Version() || pat.MuxId != muxId {
-			pat.MuxId = muxId
-			pat.Version = version
-			clearProgs(pat.Progs)
-			pat.Valid = false
-		}
-
-		d := s.Data()
-		if len(d)%4 != 0 {
-			return ErrPATDataLength
-		}
-		for i := 0; i < len(d); i += 4 {
-			pat.Progs[decodeU16(d[i:i+2])] = decodeU16(d[i+2:i+4]) & 0x1fff
-		}
-
-		if done {
-			break
+		if id == progid {
+			return // Found
 		}
 	}
+	return ts.NullPid
+}
 
-	pat.Valid = true
-	return nil
+// FindProgId returns first found program number that corresponds to pmtpid.
+// Returns ok == false if not found or error.
+func (pat *PAT) FindProgId(pmtpid uint16) (progid uint16, ok bool) {
+	pl := pat.ProgramList()
+	for !pl.IsEmpty() {
+		var pid uint16
+		progid, pid, pl = pl.Pop()
+		if pid > ts.NullPid {
+			return // Error
+		}
+		ok = (pid == pmtpid)
+		if ok {
+			return // Found
+		}
+	}
+	return
+}
+
+type ProgramList struct {
+	ss   []Section
+	data []byte
+}
+
+func (pl ProgramList) IsEmpty() bool {
+	return len(pl.ss) == 0 && len(pl.data) == 0
+}
+
+// Pop returns first (progId, pid) pair from pl. Remaining pairs are returned
+// in rpl. If there is no more programs to read rpl is empty.
+// If an error occurs pid > ts.NullPid
+func (pl ProgramList) Pop() (progId, pmtpid uint16, rpl ProgramList) {
+	if len(pl.data) == 0 {
+		if len(pl.ss) == 0 {
+			return
+		}
+		pl.data = pl.ss[0].Data()
+		pl.ss = pl.ss[1:]
+	}
+	if len(pl.data) < 4 {
+		pmtpid = ts.NullPid + 1
+		return
+	}
+	progId = decodeU16(pl.data[0:2])
+	pmtpid = decodeU16(pl.data[2:4]) & 0x1fff
+	rpl.ss = pl.ss
+	rpl.data = pl.data[4:]
+	return
 }

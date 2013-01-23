@@ -11,10 +11,6 @@ const (
 
 type Section []byte
 
-func NewSection(l int) Section {
-	return make(Section, l)
-}
-
 // TableId returns the value of table_id field
 func (s Section) TableId() byte {
 	return s[0]

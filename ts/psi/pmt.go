@@ -7,7 +7,7 @@ import (
 type PMT Section
 
 func NewPMT() PMT {
-	return PMT(NewSection(ISOSectionMaxLen))
+	return PMT(make(Section, ISOSectionMaxLen))
 }
 
 func (p PMT) Version() byte {
@@ -93,8 +93,8 @@ func (i ESInfo) DescriptorList() DescriptorList {
 type ESInfoList []byte
 
 // Pop returns first elementary stream information element in i and remaining
-// elements in ril. If an error occurs it returns i == nil. If there is no more
-// elements len(ril) == 0.
+// elements in ril.  If there is no more elements then len(ril) == 0. If an
+// error occurs i == nil.
 func (il ESInfoList) Pop() (i ESInfo, ril ESInfoList) {
 	if len(il) < 5 {
 		return

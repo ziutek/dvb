@@ -1,6 +1,9 @@
 package ts
 
-const PktLen = 188
+const (
+	PktLen = 188
+	NullPid = 8191
+)
 
 // Pkt is common interface to any MPEG-TS packet implementation
 type Pkt interface {
