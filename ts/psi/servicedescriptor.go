@@ -3,8 +3,7 @@ package psi
 type ServiceType byte
 
 const (
-	ReservedServiceType ServiceType = iota
-	DigitalTelevisionService
+	DigitalTelevisionService ServiceType = iota + 1
 	DigitalRadioSoundService
 	TeletextService
 	NVODReferenceService
@@ -19,7 +18,6 @@ const (
 )
 
 var stn = []string{
-	"reserved for future use",
 	"digital television service",
 	"digital radio sound service",
 	"Teletext service",
@@ -35,10 +33,13 @@ var stn = []string{
 }
 
 func (t ServiceType) String() string {
-	if t > DataBroadcastService {
-		return "unknown service type"
+	if t == 0 || t > DataBroadcastService && t <= 0x7F {
+		return "reserved"
 	}
-	return stn[t]
+	if t > 0x7F && t <= 0xfe {
+		return "user defined"
+	}
+	return stn[t-1]
 }
 
 type ServiceDescriptor struct {

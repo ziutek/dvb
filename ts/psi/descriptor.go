@@ -23,7 +23,7 @@ func (dl DescriptorList) Pop() (d Descriptor, rdl DescriptorList) {
 	if len(dl) < l {
 		return
 	}
-	d = Descriptor(dl[2:l])
+	d = Descriptor(dl[:l])
 	rdl = dl[l:]
 	return
 }
