@@ -26,7 +26,7 @@ func (t *Table) check() {
 	}
 }
 
-func (t *Table) Reset(){
+func (t *Table) Reset() {
 	t.m = 0
 }
 
@@ -113,4 +113,42 @@ func (t *Table) Update(r SectionReader, tableId byte, current bool) error {
 	// TODO: sort sections according to the s.Number()
 	t.m = m
 	return nil
+}
+
+type TableDescriptors struct {
+	ss     []Section
+	dl     DescriptorList
+	offset int
+}
+
+func (td TableDescriptors) IsEmpty() bool {
+	return len(td.ss) == 0 && len(td.dl) == 0
+}
+
+// Descriptors handles table global descriptors (if exists). offset is an
+// offest from begining of section data part to descriptor length word.
+func (t *Table) Descriptors(offset int) TableDescriptors {
+	return TableDescriptors{ss: t.Sections(), offset: offset}
+}
+
+func (td TableDescriptors) Pop() (d Descriptor, rtd TableDescriptors) {
+	if len(td.dl) == 0 {
+		if len(td.ss) == 0 {
+			return
+		}
+		data := td.ss[0].Data()
+		if len(data) < td.offset+2 {
+			return
+		}
+		l := int(decodeU16(data[td.offset:td.offset+2]) & 0x0fff)
+		data = data[td.offset+2:]
+		if len(data) < l {
+			return
+		}
+		td.dl = DescriptorList(data[:l])
+		td.ss = td.ss[1:]
+	}
+	d, td.dl = td.dl.Pop()
+	rtd = td
+	return
 }

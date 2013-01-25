@@ -30,7 +30,7 @@ func (p PMT) progInfoLen() int {
 	return int(decodeU16(Section(p).Data()[2:4]) & 0x0fff)
 }
 
-func (p PMT) ProgramInfo() DescriptorList {
+func (p PMT) ProgramDescriptors() DescriptorList {
 	return DescriptorList(Section(p).Data()[4 : 4+p.progInfoLen()])
 }
 
@@ -73,7 +73,7 @@ func (i ESInfo) esInfoLen() uint16 {
 	return decodeU16(i[3:5]) & 0x0fff
 }
 
-func (i ESInfo) DescriptorList() DescriptorList {
+func (i ESInfo) Descriptors() DescriptorList {
 	l := decodeU16(i[3:5])&0x0fff + 5
 	return DescriptorList(i[5:l])
 }

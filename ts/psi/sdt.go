@@ -46,7 +46,7 @@ func (sdt *SDT) Update(r SectionReader, actualMux bool, current bool) error {
 	if err != nil {
 		return err
 	}
-	if len(sdt.s().Data()) < 3 {
+	if len(sdt.s().Data()) < 2 {
 		sdt.t().Reset()
 		return ErrSDTSectionLen
 	}
@@ -80,7 +80,11 @@ func (sl ServiceInfoList) Pop() (si ServiceInfo, rsl ServiceInfoList) {
 		if len(sl.ss) == 0 {
 			return
 		}
-		sl.data = sl.ss[0].Data()[3:]
+		sl.data = sl.ss[0].Data()
+		if len(sl.data) < 3 {
+			return
+		}
+		sl.data = sl.data[3:]
 		sl.ss = sl.ss[1:]
 	}
 	if len(sl.data) < 5 {

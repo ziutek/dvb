@@ -49,6 +49,9 @@ type ServiceDescriptor struct {
 }
 
 func ParseServiceDescriptor(d Descriptor) (sd ServiceDescriptor, ok bool) {
+	if d.Tag() != ServiceTag {
+		return
+	}
 	data := d.Data()
 	if len(data) < 2 {
 		return
@@ -70,5 +73,40 @@ func ParseServiceDescriptor(d Descriptor) (sd ServiceDescriptor, ok bool) {
 	sd.ServiceName = data[:serviceNameLen]
 
 	ok = true
+	return
+}
+
+type NetworkNameDescriptor []byte
+
+func ParseNetworkNameDescriptor(d Descriptor) (nnd NetworkNameDescriptor, ok bool) {
+	if d.Tag() != NetworkNameTag {
+		return
+	}
+	nnd = NetworkNameDescriptor(d.Data())
+	ok = true
+	return
+}
+
+type ServiceListDescriptor []byte
+
+func ParseServiceListDescriptor(d Descriptor) (sld ServiceListDescriptor, ok bool) {
+	if d.Tag() != ServiceListTag {
+		return
+	}
+	sld = ServiceListDescriptor(d.Data())
+	ok = true
+	return
+}
+
+// Pop returns first (sid, typ) pair from d. Remaining pairs are returned in rd.
+// If there is no more pairs to read len(rd) == 0.
+// If an error occurs rd = nil
+func (d ServiceListDescriptor) Pop() (sid uint16, typ ServiceType, rd ServiceListDescriptor) {
+	if len(d) < 3 {
+		return
+	}
+	sid = decodeU16(d[0:2])
+	typ = ServiceType(d[2])
+	rd = d[3:]
 	return
 }
