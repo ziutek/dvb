@@ -80,6 +80,46 @@ var iso8859_9 = []rune("" +
 	"àáâãäåæçèéêëìíîï" +
 	"ğñòóôõö÷øùúûüışÿ")
 
+var iso8859_10 = []rune("" +
+	"\u00a0ĄĒĢĪĨĶ§ĻĐŠŦŽ\u00ADŪŊ" +
+	"°ąēģīĩķ·ļđšŧž―ūŋ" +
+	"ĀÁÂÃÄÅÆĮČÉĘËĖÍÎÏ" +
+	"ÐŅŌÓÔÕÖŨØŲÚÛÜÝÞß" +
+	"āáâãäåæįčéęëėíîï" +
+	"ðņōóôõöũøųúûüýþĸ")
+
+var iso8859_11 = []rune("" +
+	" กขฃคฅฆงจฉชซฌญฎฏ" +
+	"ฐฑฒณดตถทธนบปผฝพฟ" +
+	"ภมยรฤลฦวศษสหฬอฮฯ" +
+	"ะ า            ฿" +
+	"เแโใไๅๆ        ๏" +
+	"๐๑๒๓๔๕๖๗๘๙๚๛    ")
+
+var iso8859_13 = []rune("" +
+	"\u00a0”¢£¤„¦§Ø©Ŗ«¬\u00AD®Æ" +
+	"°±²³“µ¶·ø¹ŗ»¼½¾æ" +
+	"ĄĮĀĆÄÅĘĒČÉŹĖĢĶĪĻ" +
+	"ŠŃŅÓŌÕÖ×ŲŁŚŪÜŻŽß" +
+	"ąįāćäåęēčéźėģķīļ" +
+	"šńņóōõö÷ųłśūüżž’")
+
+var iso8859_14 = []rune("" +
+	"\u00a0Ḃḃ£ĊċḊ§Ẁ©ẂḋỲ\u00AD®Ÿ" +
+	"ḞḟĠġṀṁ¶ṖẁṗẃṠỳẄẅṡ" +
+	"ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏ" +
+	"ŴÑÒÓÔÕÖṪØÙÚÛÜÝŶß" +
+	"àáâãäåæçèéêëìíîï" +
+	"ŵñòóôõöṫøùúûüýŷÿ")
+
+var iso8859_15 = []rune("" +
+	"\u00a0¡¢£€¥Š§š©ª«¬\u00ad®¯" +
+	"°±²³Žµ¶·ž¹º»ŒœŸ¿" +
+	"ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏ" +
+	"ÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞß" +
+	"àáâãäåæçèéêëìíîï" +
+	"ðñòóôõö÷øùúûüýþÿ")
+
 var iso6937twoBytes = []map[byte]rune{
 	{ // Grave 0xC1
 		'A': 'À', 'E': 'È', 'I': 'Ì', 'O': 'Ò', 'U': 'Ù',
@@ -198,6 +238,27 @@ func DecodeISO8859_9(in []byte) string {
 	return decodeISO8859(iso8859_9, in)
 }
 
+func DecodeISO8859_10(in []byte) string {
+	return decodeISO8859(iso8859_10, in)
+}
+
+func DecodeISO8859_11(in []byte) string {
+	// BUG: two bytes characters not handled
+	return decodeISO8859(iso8859_11, in)
+}
+
+func DecodeISO8859_13(in []byte) string {
+	return decodeISO8859(iso8859_13, in)
+}
+
+func DecodeISO8859_14(in []byte) string {
+	return decodeISO8859(iso8859_14, in)
+}
+
+func DecodeISO8859_15(in []byte) string {
+	return decodeISO8859(iso8859_15, in)
+}
+
 var iso8859tab = []func([]byte) string{
 	DecodeISO8859_1,
 	DecodeISO8859_2,
@@ -208,15 +269,21 @@ var iso8859tab = []func([]byte) string{
 	DecodeISO8859_7,
 	DecodeISO8859_8,
 	DecodeISO8859_9,
+	DecodeISO8859_10,
+	DecodeISO8859_11,
+	nil,
+	DecodeISO8859_13,
+	DecodeISO8859_14,
+	DecodeISO8859_15,
 }
 
-// DecodeISO8859
-// TODO: It works only for n > 0 && n <= 9. Update for n <= 16
-func DecodeISO8859(n int, in []byte) string {
-	if n == 0 || n > 9 {
+// DecodeISO8859 decodes in encoded in ISO8859-part encoding. It panics if
+// part < 1 || part == 12 || part > 15.
+func DecodeISO8859(part int, in []byte) string {
+	if part < 1 || part == 12 || part > 15 {
 		panic("not supported table number")
 	}
-	return iso8859tab[n-1](in)
+	return iso8859tab[part-1](in)
 }
 
 // Decode treats in as text encoded according to EN 300 468 Annex A. It uses
@@ -246,7 +313,7 @@ func Decode(in []byte) string {
 			break
 		}
 		n := int(uint16(in[0])<<8 | uint16(in[1]))
-		if n > 0 && n <= 9 { // TODO: support n <= 16
+		if n > 0 && n != 12 && n < 16 {
 			return DecodeISO8859(n, in)
 		}
 	}
