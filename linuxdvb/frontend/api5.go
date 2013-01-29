@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"github.com/ziutek/dvb"
 	"os"
 	"syscall"
 	"unsafe"
@@ -214,12 +215,12 @@ func (f Device) SetFrequency(freq uint32) error {
 	return f.set(dtvFrequency, freq)
 }
 
-func (f Device) Modulation() (Modulation, error) {
+func (f Device) Modulation() (dvb.Modulation, error) {
 	m, err := f.get(dtvModulation)
-	return Modulation(m), err
+	return dvb.Modulation(m), err
 }
 
-func (f Device) SetModulation(m Modulation) error {
+func (f Device) SetModulation(m dvb.Modulation) error {
 	return f.set(dtvModulation, uint32(m))
 }
 
@@ -231,12 +232,12 @@ func (f Device) SetBandwidthHz(bw uint32) error {
 	return f.set(dtvBandwidthHz, bw)
 }
 
-func (f Device) Inversion() (Inversion, error) {
+func (f Device) Inversion() (dvb.Inversion, error) {
 	i, err := f.get(dtvInversion)
-	return Inversion(i), err
+	return dvb.Inversion(i), err
 }
 
-func (f Device) SetInversion(i Inversion) error {
+func (f Device) SetInversion(i dvb.Inversion) error {
 	return f.set(dtvInversion, uint32(i))
 }
 
@@ -248,12 +249,12 @@ func (f Device) SetSymbolRate(bd uint32) error {
 	return f.set(dtvSymbolRate, bd)
 }
 
-func (f Device) InnerFEC() (CodeRate, error) {
+func (f Device) InnerFEC() (dvb.CodeRate, error) {
 	r, err := f.get(dtvInnerFEC)
-	return CodeRate(r), err
+	return dvb.CodeRate(r), err
 }
 
-func (f Device) SetInnerFEC(r CodeRate) error {
+func (f Device) SetInnerFEC(r dvb.CodeRate) error {
 	return f.set(dtvInnerFEC, uint32(r))
 }
 
@@ -275,65 +276,65 @@ func (f Device) SetTone(t Tone) error {
 	return f.set(dtvTone, uint32(t))
 }
 
-func (f Device) Pilot() (Pilot, error) {
+func (f Device) Pilot() (dvb.Pilot, error) {
 	p, err := f.get(dtvPilot)
-	return Pilot(p), err
+	return dvb.Pilot(p), err
 }
 
-func (f Device) SetPilot(p Pilot) error {
+func (f Device) SetPilot(p dvb.Pilot) error {
 	return f.set(dtvPilot, uint32(p))
 }
 
-func (f Device) Rolloff() (Rolloff, error) {
+func (f Device) Rolloff() (dvb.Rolloff, error) {
 	r, err := f.get(dtvRolloff)
-	return Rolloff(r), err
+	return dvb.Rolloff(r), err
 }
 
-func (f Device) SetRolloff(r Rolloff) error {
+func (f Device) SetRolloff(r dvb.Rolloff) error {
 	return f.set(dtvRolloff, uint32(r))
 }
 
-func (f Device) CodeRateHP() (CodeRate, error) {
+func (f Device) CodeRateHP() (dvb.CodeRate, error) {
 	r, err := f.get(dtvCodeRateHP)
-	return CodeRate(r), err
+	return dvb.CodeRate(r), err
 }
 
-func (f Device) SetCodeRateHP(r CodeRate) error {
+func (f Device) SetCodeRateHP(r dvb.CodeRate) error {
 	return f.set(dtvCodeRateHP, uint32(r))
 }
 
-func (f Device) CodeRateLP() (CodeRate, error) {
+func (f Device) CodeRateLP() (dvb.CodeRate, error) {
 	r, err := f.get(dtvCodeRateLP)
-	return CodeRate(r), err
+	return dvb.CodeRate(r), err
 }
 
-func (f Device) SetCodeRateLP(r CodeRate) error {
+func (f Device) SetCodeRateLP(r dvb.CodeRate) error {
 	return f.set(dtvCodeRateLP, uint32(r))
 }
 
-func (f Device) GuardInt() (GuardInt, error) {
+func (f Device) GuardInt() (dvb.GuardInt, error) {
 	g, err := f.get(dtvGuardInterval)
-	return GuardInt(g), err
+	return dvb.GuardInt(g), err
 }
 
-func (f Device) SetGuardInt(g GuardInt) error {
+func (f Device) SetGuardInt(g dvb.GuardInt) error {
 	return f.set(dtvGuardInterval, uint32(g))
 }
 
-func (f Device) TxMode() (TxMode, error) {
+func (f Device) TxMode() (dvb.TxMode, error) {
 	m, err := f.get(dtvTransmissionMode)
-	return TxMode(m), err
+	return dvb.TxMode(m), err
 }
 
-func (f Device) SetTxMode(m TxMode) error {
+func (f Device) SetTxMode(m dvb.TxMode) error {
 	return f.set(dtvTransmissionMode, uint32(m))
 }
 
-func (f Device) Hierarchy() (Hierarchy, error) {
+func (f Device) Hierarchy() (dvb.Hierarchy, error) {
 	h, err := f.get(dtvHierarchy)
-	return Hierarchy(h), err
+	return dvb.Hierarchy(h), err
 }
 
-func (f Device) SetHierarchy(h Hierarchy) error {
+func (f Device) SetHierarchy(h dvb.Hierarchy) error {
 	return f.set(dtvHierarchy, uint32(h))
 }

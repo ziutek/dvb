@@ -86,7 +86,7 @@ func (p *PCR) Loop(dvr ts.PktReader) {
 	}
 	fmt.Println()
 
-	pkt := new(ts.Packet)
+	pkt := new(ts.ArrayPkt)
 
 	for {
 		err := dvr.ReadPkt(pkt)

@@ -3,6 +3,7 @@ package frontend
 import (
 	"bytes"
 	"fmt"
+	"github.com/ziutek/dvb"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -250,23 +251,23 @@ const (
 )
 
 type ParamDVBT struct {
-	Freq       uint32    // frequency in Hz
-	Inversion  Inversion // spectral inversion
+	Freq       uint32        // frequency in Hz
+	Inversion  dvb.Inversion // spectral inversion
 	Bandwidth  Bandwidth
-	CodeRateHP CodeRate
-	CodeRateLP CodeRate
-	Modulation Modulation
-	TxMode     TxMode
-	GuardInt   GuardInt
-	Hierarchy  Hierarchy
+	CodeRateHP dvb.CodeRate
+	CodeRateLP dvb.CodeRate
+	Modulation dvb.Modulation
+	TxMode     dvb.TxMode
+	GuardInt   dvb.GuardInt
+	Hierarchy  dvb.Hierarchy
 }
 
 func DefaultParamDVBT(c Caps, country string) *ParamDVBT {
 	var p ParamDVBT
 	if c&CanInversionAuto != 0 {
-		p.Inversion = InversionAuto
+		p.Inversion = dvb.InversionAuto
 	} else {
-		p.Inversion = InversionOff
+		p.Inversion = dvb.InversionOff
 	}
 	if c&CanBandwidthAuto != 0 {
 		p.Bandwidth = BandwidthAuto
@@ -274,31 +275,31 @@ func DefaultParamDVBT(c Caps, country string) *ParamDVBT {
 		p.Bandwidth = Bandwidth8MHz
 	}
 	if c&CanFECAuto != 0 {
-		p.CodeRateHP = FECAuto
-		p.CodeRateLP = FECAuto
+		p.CodeRateHP = dvb.FECAuto
+		p.CodeRateLP = dvb.FECAuto
 	} else {
-		p.CodeRateHP = FEC34
-		p.CodeRateLP = FEC34
+		p.CodeRateHP = dvb.FEC34
+		p.CodeRateLP = dvb.FEC34
 	}
 	if c&CanQAMAuto != 0 {
-		p.Modulation = QAMAuto
+		p.Modulation = dvb.QAMAuto
 	} else {
-		p.Modulation = QAM64
+		p.Modulation = dvb.QAM64
 	}
 	if c&CanTxModeAuto != 0 {
-		p.TxMode = TxModeAuto
+		p.TxMode = dvb.TxModeAuto
 	} else {
-		p.TxMode = TxMode8k
+		p.TxMode = dvb.TxMode8k
 	}
 	if c&CanGuardIntAuto != 0 {
-		p.GuardInt = GuardIntAuto
+		p.GuardInt = dvb.GuardIntAuto
 	} else {
-		p.GuardInt = GuardInt8
+		p.GuardInt = dvb.GuardInt8
 	}
 	if c&CanHierarchyAuto != 0 {
-		p.Hierarchy = HierarchyAuto
+		p.Hierarchy = dvb.HierarchyAuto
 	} else {
-		p.Hierarchy = HierarchyNone
+		p.Hierarchy = dvb.HierarchyNone
 	}
 	return &p
 }

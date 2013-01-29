@@ -1,5 +1,9 @@
 package psi
 
+import (
+	"github.com/ziutek/dvb"
+)
+
 type ServiceType byte
 
 const (
@@ -108,5 +112,45 @@ func (d ServiceListDescriptor) Pop() (sid uint16, typ ServiceType, rd ServiceLis
 	sid = decodeU16(d[0:2])
 	typ = ServiceType(d[2])
 	rd = d[3:]
+	return
+}
+
+type TerrestrialDeliverySystemDescriptor struct {
+	Freq           uint64 // center frequency [Hz]
+	Bandwidth      uint32 // bandwidth [Hz]
+	Constellation  dvb.Modulation
+	Hierarchy      dvb.Hierarchy
+	CodeRateHP     dvb.CodeRate
+	CodeRateLP     dvb.CodeRate
+	GuardInt       dvb.GuardInt
+	TxMode         dvb.TxMode
+	OtherFrequency bool
+}
+
+func ParseTerrestrialDeliverySystemDescriptor(d Descriptor) (tds TerrestrialDeliverySystemDescriptor, ok bool) {
+	if d.Tag() != TerrestrialDeliverySystemTag {
+		return
+	}
+	data := d.Data()
+	tds.Freq = uint64(decodeU32(data[0:4])) * 10
+	switch data[4] >> 5 {
+	case 0:
+		tds.Bandwidth = 8e6
+	case 1:
+		tds.Bandwidth = 7e6
+	default:
+		return
+	}
+	switch (data[4] >> 3) & 0x03 {
+	case 0:
+		tds.Constellation = dvb.QPSK
+	case 1:
+		tds.Constellation = dvb.QAM16
+	case 2:
+		tds.Constellation = dvb.QAM64
+	default:
+		return
+	}
+	ok = true
 	return
 }
