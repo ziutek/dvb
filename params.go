@@ -1,5 +1,57 @@
 package dvb
 
+// Device delivery sytem
+type DeliverySystem uint32
+
+const (
+	SysUndefined = iota
+	SysDVBCAnnexAC
+	SysDVBCAnnexB
+	SysDVBT
+	SysDSS
+	SysDVBS
+	SysDVBS2
+	SysDVBH
+	SysISDBT
+	SysISDBS
+	SysISDBC
+	SysATSC
+	SysATSCMH
+	SysDMBTH
+	SysCMMB
+	SysDAB
+	SysDVBT2
+	SysTURBO
+)
+
+var dsn = []string{
+	"Undefined",
+	"DVB-C Annex AC",
+	"DVB-C Annex B",
+	"DVB-T",
+	"DSS",
+	"DVB-S",
+	"DVB-S2",
+	"DVB-H",
+	"ISDB-T",
+	"ISDB-S",
+	"ISDB-C",
+	"ATSC",
+	"ATSC-MH",
+	"DMBT-H",
+	"CMMB",
+	"DAB",
+	"DVB-T2",
+	"TURBO",
+}
+
+func (ds DeliverySystem) String() string {
+	if ds > DeliverySystem(len(dsn)) {
+		return "unknown"
+	}
+	return dsn[ds]
+}
+
 type Inversion uint32
 
 const (
@@ -7,6 +59,19 @@ const (
 	InversionOn
 	InversionAuto
 )
+
+var inversionNames = []string{
+	"off",
+	"on",
+	"auto",
+}
+
+func (i Inversion) String() string {
+	if i > InversionAuto {
+		return "unknown"
+	}
+	return inversionNames[i]
+}
 
 type CodeRate uint32
 
@@ -24,6 +89,28 @@ const (
 	FEC35
 	FEC910
 )
+
+var codeRateNames = []string{
+	"none",
+	"1/2",
+	"2/3",
+	"3/4",
+	"4/5",
+	"5/6",
+	"6/7",
+	"7/8",
+	"8/9",
+	"auto",
+	"3/5",
+	"9/10",
+}
+
+func (cr CodeRate) String() string {
+	if cr > FEC910 {
+		return "unknown"
+	}
+	return codeRateNames[cr]
+}
 
 type Modulation uint32
 
@@ -78,6 +165,23 @@ const (
 	TxMode32k
 )
 
+var txModeNames = []string{
+	"2k",
+	"8k",
+	"auto",
+	"4k",
+	"1k",
+	"16k",
+	"32k",
+}
+
+func (tm TxMode) String() string {
+	if tm > TxMode32k {
+		return "unknown"
+	}
+	return txModeNames[tm]
+}
+
 type GuardInt uint32
 
 const (
@@ -88,8 +192,26 @@ const (
 	GuardIntAuto
 	GuardInt128  // 1/128
 	GuardIntN128 // 19/128
-	GuardIntN256 // 19/128
+	GuardIntN256 // 19/256
 )
+
+var guardIntNames = []string{
+	"1/32",
+	"1/16",
+	"1/8",
+	"1/4",
+	"auto",
+	"1/128",
+	"19/128",
+	"19/256",
+}
+
+func (gi GuardInt) String() string {
+	if gi > GuardIntN256 {
+		return "unknown"
+	}
+	return guardIntNames[gi]
+}
 
 type Hierarchy uint32
 
@@ -100,6 +222,21 @@ const (
 	Hierarchy4
 	HierarchyAuto
 )
+
+var hierarchyNames = []string{
+	"none",
+	"uniform",
+	"HP/LP=2",
+	"HP/LP=4",
+	"auto",
+}
+
+func (h Hierarchy) String() string {
+	if h > HierarchyAuto {
+		return "unknown"
+	}
+	return hierarchyNames[h]
+}
 
 // DVB-S2 pilot
 type Pilot uint32

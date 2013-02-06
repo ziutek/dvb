@@ -116,15 +116,28 @@ func (d ServiceListDescriptor) Pop() (sid uint16, typ ServiceType, rd ServiceLis
 }
 
 type TerrestrialDeliverySystemDescriptor struct {
-	Freq           uint64 // center frequency [Hz]
-	Bandwidth      uint32 // bandwidth [Hz]
-	Constellation  dvb.Modulation
-	Hierarchy      dvb.Hierarchy
-	CodeRateHP     dvb.CodeRate
-	CodeRateLP     dvb.CodeRate
-	GuardInt       dvb.GuardInt
-	TxMode         dvb.TxMode
-	OtherFrequency bool
+	Freq          uint64 // center frequency [Hz]
+	Bandwidth     uint32 // bandwidth [Hz]
+	Constellation dvb.Modulation
+	Hierarchy     dvb.Hierarchy
+	CodeRateHP    dvb.CodeRate
+	CodeRateLP    dvb.CodeRate
+	GuardInt      dvb.GuardInt
+	TxMode        dvb.TxMode
+	OtherFreq     bool
+}
+
+func codeRate(cr byte) dvb.CodeRate {
+	if cr < 3 {
+		return dvb.CodeRate(cr + 1)
+	}
+	switch cr {
+	case 3:
+		return dvb.FEC56
+	case 4:
+		return dvb.FEC78
+	}
+	return dvb.FECNone
 }
 
 func ParseTerrestrialDeliverySystemDescriptor(d Descriptor) (tds TerrestrialDeliverySystemDescriptor, ok bool) {
@@ -141,7 +154,7 @@ func ParseTerrestrialDeliverySystemDescriptor(d Descriptor) (tds TerrestrialDeli
 	default:
 		return
 	}
-	switch (data[4] >> 3) & 0x03 {
+	switch data[5] >> 6 {
 	case 0:
 		tds.Constellation = dvb.QPSK
 	case 1:
@@ -151,6 +164,24 @@ func ParseTerrestrialDeliverySystemDescriptor(d Descriptor) (tds TerrestrialDeli
 	default:
 		return
 	}
+	tds.Hierarchy = dvb.Hierarchy((data[5] >> 3) & 0x07)
+	if tds.Hierarchy > dvb.Hierarchy4 {
+		return
+	}
+	tds.CodeRateHP = codeRate(data[5] & 0x07)
+	if tds.CodeRateHP == dvb.FECNone {
+		return
+	}
+	tds.CodeRateLP = codeRate(data[6] >> 5)
+	if tds.CodeRateLP == dvb.FECNone {
+		return
+	}
+	tds.GuardInt = dvb.GuardInt((data[6] >> 3) & 0x03)
+	tds.TxMode = dvb.TxMode((data[6] >> 1) & 0x3)
+	if tds.TxMode > dvb.TxMode8k {
+		return
+	}
+	tds.OtherFreq = data[6]&0x01 != 0
 	ok = true
 	return
 }

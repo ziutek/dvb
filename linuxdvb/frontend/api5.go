@@ -138,64 +138,12 @@ func (f Device) Version() (major, minor int, err error) {
 	return
 }
 
-// Device delivery sytem
-type DeliverySystem uint32
-
-const (
-	SysUndefined = iota
-	SysDVBCAnnexAC
-	SysDVBCAnnexB
-	SysDVBT
-	SysDSS
-	SysDVBS
-	SysDVBS2
-	SysDVBH
-	SysISDBT
-	SysISDBS
-	SysISDBC
-	SysATSC
-	SysATSCMH
-	SysDMBTH
-	SysCMMB
-	SysDAB
-	SysDVBT2
-	SysTURBO
-)
-
-var dsn = []string{
-	"Undefined",
-	"DVB-C Annex AC",
-	"DVB-C Annex B",
-	"DVB-T",
-	"DSS",
-	"DVB-S",
-	"DVB-S2",
-	"DVB-H",
-	"ISDB-T",
-	"ISDB-S",
-	"ISDB-C",
-	"ATSC",
-	"ATSC-MH",
-	"DMBT-H",
-	"CMMB",
-	"DAB",
-	"DVB-T2",
-	"TURBO",
-}
-
-func (ds DeliverySystem) String() string {
-	if ds > DeliverySystem(len(dsn)) {
-		return "unknown"
-	}
-	return dsn[ds]
-}
-
-func (f Device) DeliverySystem() (DeliverySystem, error) {
+func (f Device) DeliverySystem() (dvb.DeliverySystem, error) {
 	ds, err := f.get(dtvDeliverySystem)
-	return DeliverySystem(ds), err
+	return dvb.DeliverySystem(ds), err
 }
 
-func (f Device) SetDeliverySystem(d DeliverySystem) error {
+func (f Device) SetDeliverySystem(d dvb.DeliverySystem) error {
 	return f.set(dtvDeliverySystem, uint32(d))
 }
 
