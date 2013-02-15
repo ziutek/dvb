@@ -4,7 +4,7 @@ package dvb
 type DeliverySystem uint32
 
 const (
-	SysUndefined = iota
+	SysUndefined DeliverySystem = iota
 	SysDVBCAnnexAC
 	SysDVBCAnnexB
 	SysDVBT
