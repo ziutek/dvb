@@ -14,7 +14,7 @@ type Tone uint32
 
 const (
 	ToneOn Tone = iota
-	TonefOff
+	ToneOff
 )
 
 // SecParam calculates intermediate frequency, tone and voltage for given
@@ -30,10 +30,10 @@ func SecParam(freq uint64, polarization byte) (f uint64, t Tone, v Voltage) {
 	}
 	if freq < 11700000 {
 		f = freq - 9750000
-		t = TonefOff
+		t = ToneOff
 	} else {
 		f = freq - 10600000
-		t = TonefOn
+		t = ToneOn
 	}
 	return
 }
