@@ -33,7 +33,7 @@ const (
 	CanQAMAuto
 	CanTxModeAuto
 	CanBandwidthAuto
-	CanGuardIntAuto
+	CanGuardAuto
 	CanHierarchyAuto
 	Can8VSB
 	Can16VSB
@@ -123,7 +123,7 @@ func (c Caps) String() string {
 	if c&CanBandwidthAuto != 0 {
 		can += "Auto bandwidth\n"
 	}
-	if c&CanGuardIntAuto != 0 {
+	if c&CanGuardAuto != 0 {
 		can += "Auto guard interval\n"
 	}
 	if c&CanHierarchyAuto != 0 {
@@ -258,7 +258,7 @@ type ParamDVBT struct {
 	CodeRateLP dvb.CodeRate
 	Modulation dvb.Modulation
 	TxMode     dvb.TxMode
-	GuardInt   dvb.GuardInt
+	Guard      dvb.Guard
 	Hierarchy  dvb.Hierarchy
 }
 
@@ -291,10 +291,10 @@ func DefaultParamDVBT(c Caps, country string) *ParamDVBT {
 	} else {
 		p.TxMode = dvb.TxMode8k
 	}
-	if c&CanGuardIntAuto != 0 {
-		p.GuardInt = dvb.GuardIntAuto
+	if c&CanGuardAuto != 0 {
+		p.Guard = dvb.GuardAuto
 	} else {
-		p.GuardInt = dvb.GuardInt8
+		p.Guard = dvb.Guard8
 	}
 	if c&CanHierarchyAuto != 0 {
 		p.Hierarchy = dvb.HierarchyAuto

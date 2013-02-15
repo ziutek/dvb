@@ -122,7 +122,7 @@ type TerrestrialDeliverySystemDescriptor struct {
 	Hierarchy     dvb.Hierarchy
 	CodeRateHP    dvb.CodeRate
 	CodeRateLP    dvb.CodeRate
-	GuardInt      dvb.GuardInt
+	Guard         dvb.Guard
 	TxMode        dvb.TxMode
 	OtherFreq     bool
 }
@@ -176,7 +176,7 @@ func ParseTerrestrialDeliverySystemDescriptor(d Descriptor) (tds TerrestrialDeli
 	if tds.CodeRateLP == dvb.FECNone {
 		return
 	}
-	tds.GuardInt = dvb.GuardInt((data[6] >> 3) & 0x03)
+	tds.Guard = dvb.Guard((data[6] >> 3) & 0x03)
 	tds.TxMode = dvb.TxMode((data[6] >> 1) & 0x3)
 	if tds.TxMode > dvb.TxMode8k {
 		return

@@ -182,20 +182,20 @@ func (tm TxMode) String() string {
 	return txModeNames[tm]
 }
 
-type GuardInt uint32
+type Guard uint32
 
 const (
-	GuardInt32 GuardInt = iota // 1/32
-	GuardInt16                 // 1/16
-	GuardInt8                  // 1/8
-	GuardInt4                  // 1/4
-	GuardIntAuto
-	GuardInt128  // 1/128
-	GuardIntN128 // 19/128
-	GuardIntN256 // 19/256
+	Guard32 Guard = iota // 1/32
+	Guard16              // 1/16
+	Guard8               // 1/8
+	Guard4               // 1/4
+	GuardAuto
+	Guard128  // 1/128
+	GuardN128 // 19/128
+	GuardN256 // 19/256
 )
 
-var guardIntNames = []string{
+var guardNames = []string{
 	"1/32",
 	"1/16",
 	"1/8",
@@ -206,11 +206,11 @@ var guardIntNames = []string{
 	"19/256",
 }
 
-func (gi GuardInt) String() string {
-	if gi > GuardIntN256 {
+func (gi Guard) String() string {
+	if gi > GuardN256 {
 		return "unknown"
 	}
-	return guardIntNames[gi]
+	return guardNames[gi]
 }
 
 type Hierarchy uint32

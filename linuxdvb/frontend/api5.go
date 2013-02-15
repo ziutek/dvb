@@ -260,12 +260,12 @@ func (f Device) SetCodeRateLP(r dvb.CodeRate) error {
 	return f.set(dtvCodeRateLP, uint32(r))
 }
 
-func (f Device) GuardInt() (dvb.GuardInt, error) {
+func (f Device) Guard() (dvb.Guard, error) {
 	g, err := f.get(dtvGuardInterval)
-	return dvb.GuardInt(g), err
+	return dvb.Guard(g), err
 }
 
-func (f Device) SetGuardInt(g dvb.GuardInt) error {
+func (f Device) SetGuard(g dvb.Guard) error {
 	return f.set(dtvGuardInterval, uint32(g))
 }
 
