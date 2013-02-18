@@ -97,40 +97,35 @@ type properties struct {
 	props *property
 }
 
-func (f Device) set(c cmd, data uint32) error {
+func (d Device) set(c cmd, data uint32) syscall.Errno {
 	p := property{cmd: c, data: data}
 	ps := properties{1, &p}
 	_, _, e := syscall.Syscall(
 		syscall.SYS_IOCTL,
-		f.Fd(),
+		d.Fd(),
 		_FE_SET_PROPERTY,
 		uintptr(unsafe.Pointer(&ps)),
 	)
-	if e != 0 {
-		return e
-	}
-	return nil
+	return e
 }
 
-func (f Device) get(c cmd) (uint32, error) {
+func (d Device) get(c cmd) (uint32, syscall.Errno) {
 	p := property{cmd: c}
 	ps := properties{1, &p}
 	_, _, e := syscall.Syscall(
 		syscall.SYS_IOCTL,
-		f.Fd(),
+		d.Fd(),
 		_FE_GET_PROPERTY,
 		uintptr(unsafe.Pointer(&ps)),
 	)
-	if e != 0 {
-		return 0, e
-	}
-	return p.data, nil
+	return p.data, e
 }
 
-func (f Device) Version() (major, minor int, err error) {
+func (d Device) Version() (major, minor int, err error) {
 	var u uint32
-	u, err = f.get(dtvAPIVersion)
-	if err != nil {
+	u, e := d.get(dtvAPIVersion)
+	if e != 0 {
+		err = Error{"get", "api version", e}
 		return
 	}
 	major = int(u>>8) & 0xff
@@ -138,151 +133,282 @@ func (f Device) Version() (major, minor int, err error) {
 	return
 }
 
-func (f Device) DeliverySystem() (dvb.DeliverySystem, error) {
-	ds, err := f.get(dtvDeliverySystem)
-	return dvb.DeliverySystem(ds), err
+func (d Device) DeliverySystem() (dvb.DeliverySystem, error) {
+	ds, e := d.get(dtvDeliverySystem)
+	if e != 0 {
+		return 0, Error{"get", "dlivery system", e}
+	}
+	return dvb.DeliverySystem(ds), nil
 }
 
-func (f Device) SetDeliverySystem(d dvb.DeliverySystem) error {
-	return f.set(dtvDeliverySystem, uint32(d))
+func (d Device) SetDeliverySystem(ds dvb.DeliverySystem) error {
+	e := d.set(dtvDeliverySystem, uint32(ds))
+	if e != 0 {
+		return Error{"set", "dlivery system", e}
+	}
+	return nil
+
 }
 
-func (f Device) Tune() error {
-	return f.set(dtvTune, 0)
+func (d Device) Tune() error {
+	e := d.set(dtvTune, 0)
+	if e != 0 {
+		return Error{"tune", "", e}
+	}
+	return nil
 }
 
-func (f Device) Clear() error {
-	return f.set(dtvClear, 0)
+func (d Device) Clear() error {
+	e := d.set(dtvClear, 0)
+	if e != 0 {
+		return Error{"clear", "", e}
+	}
+	return nil
+
 }
 
-func (f Device) Frequency() (uint32, error) {
-	return f.get(dtvFrequency)
+func (d Device) Frequency() (uint32, error) {
+	f, e := d.get(dtvFrequency)
+	if e != 0 {
+		return 0, Error{"get", "frequency", e}
+	}
+	return f, nil
 }
 
-func (f Device) SetFrequency(freq uint32) error {
-	return f.set(dtvFrequency, freq)
+func (d Device) SetFrequency(f uint32) error {
+	e := d.set(dtvFrequency, f)
+	if e != 0 {
+		return Error{"set", "frequency", e}
+	}
+	return nil
+
 }
 
-func (f Device) Modulation() (dvb.Modulation, error) {
-	m, err := f.get(dtvModulation)
-	return dvb.Modulation(m), err
+func (d Device) Modulation() (dvb.Modulation, error) {
+	m, e := d.get(dtvModulation)
+	if e != 0 {
+		return 0, Error{"get", "modulation", e}
+	}
+	return dvb.Modulation(m), nil
 }
 
-func (f Device) SetModulation(m dvb.Modulation) error {
-	return f.set(dtvModulation, uint32(m))
+func (d Device) SetModulation(m dvb.Modulation) error {
+	e := d.set(dtvModulation, uint32(m))
+	if e != 0 {
+		return Error{"set", "modulation", e}
+	}
+	return nil
+
 }
 
-func (f Device) BandwidthHz() (uint32, error) {
-	return f.get(dtvBandwidthHz)
+// Bandwidth returns bandwidth in Hz
+func (d Device) Bandwidth() (uint32, error) {
+	b, e := d.get(dtvBandwidthHz)
+	if e != 0 {
+		return 0, Error{"get", "bandwidth", e}
+	}
+	return b, nil
+
 }
 
-func (f Device) SetBandwidthHz(bw uint32) error {
-	return f.set(dtvBandwidthHz, bw)
+func (d Device) SetBandwidth(hz uint32) error {
+	e := d.set(dtvBandwidthHz, hz)
+	if e != 0 {
+		return Error{"set", "bandwidth", e}
+	}
+	return nil
 }
 
-func (f Device) Inversion() (dvb.Inversion, error) {
-	i, err := f.get(dtvInversion)
-	return dvb.Inversion(i), err
+func (d Device) Inversion() (dvb.Inversion, error) {
+	i, e := d.get(dtvInversion)
+	if e != 0 {
+		return 0, Error{"get", "inversion", e}
+	}
+	return dvb.Inversion(i), nil
 }
 
-func (f Device) SetInversion(i dvb.Inversion) error {
-	return f.set(dtvInversion, uint32(i))
+func (d Device) SetInversion(i dvb.Inversion) error {
+	e := d.set(dtvInversion, uint32(i))
+	if e != 0 {
+		return Error{"set", "inversion", e}
+	}
+	return nil
 }
 
-func (f Device) SymbolRate() (uint32, error) {
-	return f.get(dtvSymbolRate)
+func (d Device) SymbolRate() (uint32, error) {
+	sr, e := d.get(dtvSymbolRate)
+	if e != 0 {
+		return 0, Error{"get", "symbol rate", e}
+	}
+	return sr, nil
 }
 
-func (f Device) SetSymbolRate(bd uint32) error {
-	return f.set(dtvSymbolRate, bd)
+func (d Device) SetSymbolRate(bd uint32) error {
+	e := d.set(dtvSymbolRate, bd)
+	if e != 0 {
+		return Error{"set", "symbol rate", e}
+	}
+	return nil
 }
 
-func (f Device) InnerFEC() (dvb.CodeRate, error) {
-	r, err := f.get(dtvInnerFEC)
-	return dvb.CodeRate(r), err
+func (d Device) InnerFEC() (dvb.CodeRate, error) {
+	r, e := d.get(dtvInnerFEC)
+	if e != 0 {
+		return 0, Error{"get", "inner fec", e}
+	}
+	return dvb.CodeRate(r), nil
 }
 
-func (f Device) SetInnerFEC(r dvb.CodeRate) error {
-	return f.set(dtvInnerFEC, uint32(r))
+func (d Device) SetInnerFEC(r dvb.CodeRate) error {
+	e := d.set(dtvInnerFEC, uint32(r))
+	if e != 0 {
+		return Error{"set", "inner fec", e}
+	}
+	return nil
 }
 
-func (f Device) Voltage() (Voltage, error) {
-	v, err := f.get(dtvVoltage)
-	return Voltage(v), err
+func (d Device) Voltage() (Voltage, error) {
+	v, e := d.get(dtvVoltage)
+	if e != 0 {
+		return 0, Error{"get", "voltage", e}
+	}
+	return Voltage(v), nil
 }
 
-func (f Device) SetVoltage(v Voltage) error {
-	return f.set(dtvVoltage, uint32(v))
+func (d Device) SetVoltage(v Voltage) error {
+	e := d.set(dtvVoltage, uint32(v))
+	if e != 0 {
+		return Error{"set", "voltage", e}
+	}
+	return nil
 }
 
-func (f Device) Tone() (Tone, error) {
-	t, err := f.get(dtvTone)
-	return Tone(t), err
+func (d Device) Tone() (Tone, error) {
+	t, e := d.get(dtvTone)
+	if e != 0 {
+		return 0, Error{"get", "tone", e}
+	}
+	return Tone(t), nil
 }
 
-func (f Device) SetTone(t Tone) error {
-	return f.set(dtvTone, uint32(t))
+func (d Device) SetTone(t Tone) error {
+	e := d.set(dtvTone, uint32(t))
+	if e != 0 {
+		return Error{"set", "tone", e}
+	}
+	return nil
+
 }
 
-func (f Device) Pilot() (dvb.Pilot, error) {
-	p, err := f.get(dtvPilot)
-	return dvb.Pilot(p), err
+func (d Device) Pilot() (dvb.Pilot, error) {
+	p, e := d.get(dtvPilot)
+	if e != 0 {
+		return 0, Error{"get", "rolloff", e}
+	}
+	return dvb.Pilot(p), nil
 }
 
-func (f Device) SetPilot(p dvb.Pilot) error {
-	return f.set(dtvPilot, uint32(p))
+func (d Device) SetPilot(p dvb.Pilot) error {
+	e := d.set(dtvPilot, uint32(p))
+	if e != 0 {
+		return Error{"set", "pilot", e}
+	}
+	return nil
 }
 
-func (f Device) Rolloff() (dvb.Rolloff, error) {
-	r, err := f.get(dtvRolloff)
-	return dvb.Rolloff(r), err
+func (d Device) Rolloff() (dvb.Rolloff, error) {
+	r, e := d.get(dtvRolloff)
+	if e != 0 {
+		return 0, Error{"get", "rolloff", e}
+	}
+	return dvb.Rolloff(r), nil
 }
 
-func (f Device) SetRolloff(r dvb.Rolloff) error {
-	return f.set(dtvRolloff, uint32(r))
+func (d Device) SetRolloff(r dvb.Rolloff) error {
+	e := d.set(dtvRolloff, uint32(r))
+	if e != 0 {
+		return Error{"set", "rolloff", e}
+	}
+	return nil
 }
 
-func (f Device) CodeRateHP() (dvb.CodeRate, error) {
-	r, err := f.get(dtvCodeRateHP)
-	return dvb.CodeRate(r), err
+func (d Device) CodeRateHP() (dvb.CodeRate, error) {
+	r, e := d.get(dtvCodeRateHP)
+	if e != 0 {
+		return 0, Error{"get", "code rate HP", e}
+	}
+	return dvb.CodeRate(r), nil
 }
 
-func (f Device) SetCodeRateHP(r dvb.CodeRate) error {
-	return f.set(dtvCodeRateHP, uint32(r))
+func (d Device) SetCodeRateHP(r dvb.CodeRate) error {
+	e := d.set(dtvCodeRateHP, uint32(r))
+	if e != 0 {
+		return Error{"set", "code rate HP", e}
+	}
+	return nil
 }
 
-func (f Device) CodeRateLP() (dvb.CodeRate, error) {
-	r, err := f.get(dtvCodeRateLP)
-	return dvb.CodeRate(r), err
+func (d Device) CodeRateLP() (dvb.CodeRate, error) {
+	r, e := d.get(dtvCodeRateLP)
+	if e != 0 {
+		return 0, Error{"get", "code rate LP", e}
+	}
+	return dvb.CodeRate(r), nil
 }
 
-func (f Device) SetCodeRateLP(r dvb.CodeRate) error {
-	return f.set(dtvCodeRateLP, uint32(r))
+func (d Device) SetCodeRateLP(r dvb.CodeRate) error {
+	e := d.set(dtvCodeRateLP, uint32(r))
+	if e != 0 {
+		return Error{"set", "code rate LP", e}
+	}
+	return nil
 }
 
-func (f Device) Guard() (dvb.Guard, error) {
-	g, err := f.get(dtvGuardInterval)
-	return dvb.Guard(g), err
+func (d Device) Guard() (dvb.Guard, error) {
+	g, e := d.get(dtvGuardInterval)
+	if e != 0 {
+		return 0, Error{"get", "guard interval", e}
+	}
+	return dvb.Guard(g), nil
 }
 
-func (f Device) SetGuard(g dvb.Guard) error {
-	return f.set(dtvGuardInterval, uint32(g))
+func (d Device) SetGuard(g dvb.Guard) error {
+	e := d.set(dtvGuardInterval, uint32(g))
+	if e != 0 {
+		return Error{"set", "guard interval", e}
+	}
+	return nil
 }
 
-func (f Device) TxMode() (dvb.TxMode, error) {
-	m, err := f.get(dtvTransmissionMode)
-	return dvb.TxMode(m), err
+func (d Device) TxMode() (dvb.TxMode, error) {
+	m, e := d.get(dtvTransmissionMode)
+	if e != 0 {
+		return 0, Error{"get", "transmission mode", e}
+	}
+	return dvb.TxMode(m), nil
 }
 
-func (f Device) SetTxMode(m dvb.TxMode) error {
-	return f.set(dtvTransmissionMode, uint32(m))
+func (d Device) SetTxMode(m dvb.TxMode) error {
+	e := d.set(dtvTransmissionMode, uint32(m))
+	if e != 0 {
+		return Error{"set", "transmission mode", e}
+	}
+	return nil
 }
 
-func (f Device) Hierarchy() (dvb.Hierarchy, error) {
-	h, err := f.get(dtvHierarchy)
-	return dvb.Hierarchy(h), err
+func (d Device) Hierarchy() (dvb.Hierarchy, error) {
+	h, e := d.get(dtvHierarchy)
+	if e != 0 {
+		return 0, Error{"get", "hierarchy", e}
+	}
+	return dvb.Hierarchy(h), nil
 }
 
-func (f Device) SetHierarchy(h dvb.Hierarchy) error {
-	return f.set(dtvHierarchy, uint32(h))
+func (d Device) SetHierarchy(h dvb.Hierarchy) error {
+	e := d.set(dtvHierarchy, uint32(h))
+	if e != 0 {
+		return Error{"set", "hierarchy", e}
+	}
+	return nil
+
 }

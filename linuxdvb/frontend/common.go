@@ -1,5 +1,9 @@
 package frontend
 
+import (
+	"syscall"
+)
+
 // Satellite equipment control (SEC) voltage
 type Voltage uint32
 
@@ -36,4 +40,14 @@ func SecParam(freq uint32, polarization byte) (f uint32, t Tone, v Voltage) {
 		t = ToneOn
 	}
 	return
+}
+
+type Error struct {
+	Op   string
+	What string
+	Err  syscall.Errno
+}
+
+func (e Error) Error() string {
+	return e.Op + " " + e.What + ": " + e.Err.Error()
 }
