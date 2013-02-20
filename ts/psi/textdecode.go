@@ -4,7 +4,7 @@ import (
 	"github.com/ziutek/textenc"
 )
 
-// Decode treats in as text encoded according to EN 300 468 Annex A. It uses
+// Decode treats s as text encoded according to EN 300 468 Annex A. It uses
 // appropriate conversion according to selection byte
 func DecodeText(s []byte) string {
 	if len(s) == 0 {

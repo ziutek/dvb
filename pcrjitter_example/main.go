@@ -152,12 +152,12 @@ func main() {
 	fmt.Printf("Tuning to %d MHz...\n", uint(freq))
 	feParam := frontend.DefaultParamDVBT(feInfo.Caps, "pl")
 	feParam.Freq = freq * 1e6
-	checkErr(fe3.TuneDVBT(feParam))
+	checkErr(feParam.Tune(fe3))
 
-	var ev frontend.EventDVBT
-	for ev.Status&frontend.HasLock == 0 {
-		checkErr(fe3.GetEventDVBT(&ev))
-		fmt.Println("FE status:", ev.Status)
+	var ev frontend.Event
+	for ev.Status()&frontend.HasLock == 0 {
+		checkErr(fe3.GetEvent(&ev))
+		fmt.Println("FE status:", ev.Status())
 	}
 	fmt.Println()
 

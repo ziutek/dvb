@@ -226,7 +226,7 @@ func (f API3) GetInfo(i *Info) error {
 		uintptr(unsafe.Pointer(i)),
 	)
 	if e != 0 {
-		return e
+		return Error{"get", "info", e}
 	}
 	return nil
 }
@@ -250,6 +250,36 @@ const (
 	Bandwidth1712kHz
 )
 
+var bandwidthName = []string{
+	"8Mhz",
+	"7MHz",
+	"6MHz",
+	"auto",
+	"5Mhz",
+	"10Mhz",
+	"1712kHz",
+}
+
+func (b Bandwidth) String() string {
+	if b > Bandwidth1712kHz {
+		return "unknown"
+	}
+	return bandwidthName[b]
+}
+
+func (f API3) tune(p unsafe.Pointer) error {
+	_, _, e := syscall.Syscall(
+		syscall.SYS_IOCTL,
+		f.Fd(),
+		_FE_SET_FRONTEND,
+		uintptr(p),
+	)
+	if e != 0 {
+		return e
+	}
+	return nil
+}
+
 type ParamDVBT struct {
 	Freq       uint32        // frequency in Hz
 	Inversion  dvb.Inversion // spectral inversion
@@ -262,6 +292,37 @@ type ParamDVBT struct {
 	Hierarchy  dvb.Hierarchy
 }
 
+func (p *ParamDVBT) Tune(f API3) error {
+	return f.tune(unsafe.Pointer(p))
+}
+
+type ParamDVBS struct {
+	Freq       uint32        // frequency in Hz
+	Inversion  dvb.Inversion // spectral inversion
+	SymbolRate uint32
+	InnerFEC   dvb.CodeRate
+}
+
+func (p *ParamDVBS) Tune(f API3) error {
+	return f.tune(unsafe.Pointer(p))
+}
+
+type ParamDVBC struct {
+	Freq       uint32        // frequency in Hz
+	Inversion  dvb.Inversion // spectral inversion
+	SymbolRate uint32
+	CodeRate   dvb.CodeRate
+	Modulation dvb.Modulation
+}
+
+func (p *ParamDVBC) Tune(f API3) error {
+	return f.tune(unsafe.Pointer(p))
+}
+
+// DefaultParamDVBT returns pointer to ParamDVBT initialized according to
+// regulations in specific country.
+// TODO: DefaultParamDVBT always setup ParamDVBT for Poland. Add support for
+// other countries.
 func DefaultParamDVBT(c Caps, country string) *ParamDVBT {
 	var p ParamDVBT
 	if c&CanInversionAuto != 0 {
@@ -304,19 +365,6 @@ func DefaultParamDVBT(c Caps, country string) *ParamDVBT {
 	return &p
 }
 
-func (f API3) TuneDVBT(p *ParamDVBT) error {
-	_, _, e := syscall.Syscall(
-		syscall.SYS_IOCTL,
-		f.Fd(),
-		_FE_SET_FRONTEND,
-		uintptr(unsafe.Pointer(p)),
-	)
-	if e != 0 {
-		return e
-	}
-	return nil
-}
-
 type Status uint32
 
 const (
@@ -356,17 +404,29 @@ func (s Status) String() string {
 	return ret
 }
 
-type Event interface {
-	Status() Status
+type Event struct {
+	status Status
+	param  [36]byte // enough to save longest parameters (for DVB-T)
 }
 
-type EventDVBT struct {
-	Status Status
-	Param  ParamDVBT
+func (e *Event) Status() Status {
+	return e.status
+}
+
+func (e *Event) ParamDVBT() *ParamDVBT {
+	return (*ParamDVBT)(unsafe.Pointer(&e.param))
+}
+
+func (e *Event) ParamDVBS() *ParamDVBS {
+	return (*ParamDVBS)(unsafe.Pointer(&e.param))
+}
+
+func (e *Event) ParamDVBC() *ParamDVBC {
+	return (*ParamDVBC)(unsafe.Pointer(&e.param))
 }
 
 // GetEvent can return dvb.OverflowError
-func (f API3) GetEventDVBT(ev *EventDVBT) error {
+func (f API3) GetEvent(ev *Event) error {
 	_, _, e := syscall.Syscall(
 		syscall.SYS_IOCTL,
 		f.Fd(),
@@ -374,7 +434,7 @@ func (f API3) GetEventDVBT(ev *EventDVBT) error {
 		uintptr(unsafe.Pointer(ev)),
 	)
 	if e != 0 {
-		return e
+		return Error{"get", "event", e}
 	}
 	return nil
 }
