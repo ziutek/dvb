@@ -156,7 +156,8 @@ func main() {
 
 	var ev frontend.Event
 	for ev.Status()&frontend.HasLock == 0 {
-		checkErr(fe3.GetEvent(&ev))
+		_, err := fe3.WaitEvent(&ev, 0)
+		checkErr(err)
 		fmt.Println("FE status:", ev.Status())
 	}
 	fmt.Println()

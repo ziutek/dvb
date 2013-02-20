@@ -6,6 +6,7 @@ import (
 	"github.com/ziutek/dvb"
 	"strings"
 	"syscall"
+	"time"
 	"unsafe"
 )
 
@@ -217,8 +218,8 @@ func (i *Info) String() string {
 	)
 }
 
-// GetInfo works like Info but doesn't allocates memory for Info struct
-func (f API3) GetInfo(i *Info) error {
+func (f API3) Info() (*Info, error) {
+	i := new(Info)
 	_, _, e := syscall.Syscall(
 		syscall.SYS_IOCTL,
 		f.Fd(),
@@ -226,16 +227,9 @@ func (f API3) GetInfo(i *Info) error {
 		uintptr(unsafe.Pointer(i)),
 	)
 	if e != 0 {
-		return Error{"get", "info", e}
+		return nil, Error{"get", "info", e}
 	}
-	return nil
-}
-
-// Info returns frontend informations
-func (f API3) Info() (*Info, error) {
-	i := new(Info)
-	err := f.GetInfo(i)
-	return i, err
+	return i, nil
 }
 
 type Bandwidth uint32
@@ -404,6 +398,71 @@ func (s Status) String() string {
 	return ret
 }
 
+func (f API3) Status() (status Status, err error) {
+	_, _, e := syscall.Syscall(
+		syscall.SYS_IOCTL,
+		f.Fd(),
+		_FE_READ_STATUS,
+		uintptr(unsafe.Pointer(&status)),
+	)
+	if e != 0 {
+		err = Error{"get", "status", e}
+	}
+	return
+}
+
+func (f API3) BER() (ber uint32, err error) {
+	_, _, e := syscall.Syscall(
+		syscall.SYS_IOCTL,
+		f.Fd(),
+		_FE_READ_BER,
+		uintptr(unsafe.Pointer(&ber)),
+	)
+	if e != 0 {
+		err = Error{"get", "ber", e}
+	}
+	return
+}
+
+func (f API3) SNR() (snr int16, err error) {
+	_, _, e := syscall.Syscall(
+		syscall.SYS_IOCTL,
+		f.Fd(),
+		_FE_READ_SNR,
+		uintptr(unsafe.Pointer(&snr)),
+	)
+	if e != 0 {
+		err = Error{"get", "snr", e}
+	}
+	return
+}
+
+func (f API3) SignalStrength() (ss int16, err error) {
+	_, _, e := syscall.Syscall(
+		syscall.SYS_IOCTL,
+		f.Fd(),
+		_FE_READ_SIGNAL_STRENGTH,
+		uintptr(unsafe.Pointer(&ss)),
+	)
+	if e != 0 {
+		err = Error{"get", "rssi", e}
+	}
+	return
+}
+
+func (f API3) UncorrectedBlocks() (ublocks uint32, err error) {
+	_, _, e := syscall.Syscall(
+		syscall.SYS_IOCTL,
+		f.Fd(),
+		_FE_READ_UNCORRECTED_BLOCKS,
+		uintptr(unsafe.Pointer(&ublocks)),
+	)
+	if e != 0 {
+		err = Error{"get", "ber", e}
+	}
+	return
+}
+
 type Event struct {
 	status Status
 	param  [36]byte // enough to save longest parameters (for DVB-T)
@@ -425,16 +484,33 @@ func (e *Event) ParamDVBC() *ParamDVBC {
 	return (*ParamDVBC)(unsafe.Pointer(&e.param))
 }
 
-// GetEvent can return dvb.OverflowError
-func (f API3) GetEvent(ev *Event) error {
+// WaitEvent can return dvb.ErrOverflow. If timeout > 0 it waits for timeout
+// ns and returns true if doesn't receive any event.
+func (f API3) WaitEvent(ev *Event, timeout time.Duration) (bool, error) {
+	fd := f.Fd()
+	if timeout > 0 {
+		var r syscall.FdSet
+		r.Bits[fd/64] = 1 << (fd % 64)
+		tv := syscall.NsecToTimeval(int64(timeout))
+		n, err := syscall.Select(int(fd+1), &r, nil, nil, &tv)
+		if err != nil {
+			return false, Error{"get", "event (select)", err}
+		}
+		if n == 0 {
+			return true, nil
+		}
+	}
 	_, _, e := syscall.Syscall(
 		syscall.SYS_IOCTL,
-		f.Fd(),
+		fd,
 		_FE_GET_EVENT,
 		uintptr(unsafe.Pointer(ev)),
 	)
 	if e != 0 {
-		return Error{"get", "event", e}
+		if e == syscall.EOVERFLOW {
+			return false, dvb.ErrOverflow
+		}
+		return false, Error{"get", "event", e}
 	}
-	return nil
+	return false, nil
 }

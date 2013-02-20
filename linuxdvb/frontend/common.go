@@ -1,9 +1,5 @@
 package frontend
 
-import (
-	"syscall"
-)
-
 // Satellite equipment control (SEC) voltage
 type Voltage uint32
 
@@ -45,7 +41,7 @@ func SecParam(freq uint32, polarization byte) (f uint32, t Tone, v Voltage) {
 type Error struct {
 	Op   string
 	What string
-	Err  syscall.Errno
+	Err  error
 }
 
 func (e Error) Error() string {
