@@ -111,11 +111,11 @@ const (
 )
 
 var ssn = []string{
-	"Undefined",
-	"NotRunnind",
-	"StartsInFewSeconds",
-	"Pausing",
-	"Running",
+	"undefined",
+	"not runnind",
+	"starts in few seconds",
+	"pausing",
+	"running",
 }
 
 func (ss ServiceStatus) String() string {
