@@ -75,4 +75,13 @@ const (
 	DataBroadcastTag             DescriptorTag = 0x64
 	CASystemTag                  DescriptorTag = 0x65
 	DataBroadcastIdTag           DescriptorTag = 0x66
+	TransportStreamTag           DescriptorTag = 0x67
+	DSNGTag                      DescriptorTag = 0x68
+	PDCTag                       DescriptorTag = 0x69
+	AC3Tag                       DescriptorTag = 0x6a
+	AncillaryDataTag             DescriptorTag = 0x6b
+	CellListTag                  DescriptorTag = 0x6c
+	EnhancedAC3Tag               DescriptorTag = 0x7a
+	DTSTag                       DescriptorTag = 0x7b
+	AACTag                       DescriptorTag = 0x7c
 )
