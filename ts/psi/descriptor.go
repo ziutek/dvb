@@ -81,7 +81,11 @@ const (
 	AC3Tag                       DescriptorTag = 0x6a
 	AncillaryDataTag             DescriptorTag = 0x6b
 	CellListTag                  DescriptorTag = 0x6c
-	EnhancedAC3Tag               DescriptorTag = 0x7a
-	DTSTag                       DescriptorTag = 0x7b
-	AACTag                       DescriptorTag = 0x7c
+	CellFrequencyLinkTag         DescriptorTag = 0x6d
+	AnnouncementSupportTag       DescriptorTag = 0x6e
+	ApplicationSignalling        DescriptorTag = 0x6f
+
+	EnhancedAC3Tag DescriptorTag = 0x7a
+	DTSTag         DescriptorTag = 0x7b
+	AACTag         DescriptorTag = 0x7c
 )
