@@ -7,40 +7,70 @@ import (
 type ServiceType byte
 
 const (
-	DigitalTelevisionService ServiceType = iota + 1
-	DigitalRadioSoundService
-	TeletextService
-	NVODReferenceService
-	NVODTimeShiftedService
-	MosaicService
-	PALCodedSignal
-	SCAMCodedSignal
-	D2MAC
-	FMRadio
-	NTSCCodedSignal
-	DataBroadcastService
+	DigitalTelevisionService = ServiceType(0x01)
+	DigitalRadioSoundService = ServiceType(0x02)
+	TeletextService          = ServiceType(0x03)
+	NVODReferenceService     = ServiceType(0x04)
+	NVODTimeShiftedService   = ServiceType(0x05)
+	MosaicService            = ServiceType(0x06)
+	FMRadioService           = ServiceType(0x07)
+	DVBSRMService            = ServiceType(0x08)
+	// 0x09
+	AdvancedCodecDigitalRadioSoundService = ServiceType(0x0a)
+	AdvancedCodecMosaicService            = ServiceType(0x0b)
+	DataBroadcastService                  = ServiceType(0x0c)
+	// 0x0d
+	RCSMapService                   = ServiceType(0x0e)
+	RCSFLSService                   = ServiceType(0x0f)
+	DVBMHPService                   = ServiceType(0x10)
+	MPEG2HDDigitalTelevisionService = ServiceType(0x11)
+	// 0x12
+	// 0x13
+	// 0x14
+	// 0x15
+	AdvancedCodecSDDigitalTelevisionService = ServiceType(0x16)
+	AdvancedCodecSDNVODTimeShiftedService   = ServiceType(0x17)
+	AdvancedCodecSDNVODReferenceService     = ServiceType(0x18)
+	AdvancedCodecHDDigitalTelevisionService = ServiceType(0x19)
+	AdvancedCodecHDNVODTimeShiftedService   = ServiceType(0x1a)
+	AdvancedCodecHDNVODReferenceService     = ServiceType(0x1b)
 )
 
 var stn = []string{
-	"digital television service",
-	"digital radio sound service",
-	"Teletext service",
-	"NVOD reference service",
-	"NVOD time-shifted service",
-	"mosaic service",
-	"PAL coded signal",
-	"SECAM coded signal",
-	"D/D2-MAC",
-	"FM Radio",
-	"NTSC coded signal",
-	"data broadcast service",
+	"digital television",
+	"digital radio sound",
+	"teletext",
+	"NVOD reference",
+	"NVOD time-shifted",
+	"mosaic",
+	"FM radio",
+	"DVB SRM",
+	"reserved",
+	"advanced codec digital radio sound",
+	"advanced codec mosaic",
+	"data broadcast",
+	"reserved",
+	"RCS Map",
+	"RCS FLS",
+	"DVB MHP",
+	"MPEG-2 HD digital television",
+	"reserved",
+	"reserved",
+	"reserved",
+	"reserved",
+	"advanced codec SD digital television",
+	"advanced codec SD NVOD time-shifted",
+	"advanced codec SD NVOD reference",
+	"advanced codec HD digital television",
+	"advanced codec HD NVOD time-shifted",
+	"advanced codec HD NVOD reference",
 }
 
 func (t ServiceType) String() string {
-	if t == 0 || t > DataBroadcastService && t <= 0x7F {
+	if t == 0 || t == 0xff || t > AdvancedCodecHDNVODReferenceService && t <= 0x7F {
 		return "reserved"
 	}
-	if t > 0x7F && t <= 0xfe {
+	if t > 0x7F {
 		return "user defined"
 	}
 	return stn[t-1]
