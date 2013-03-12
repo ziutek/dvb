@@ -47,6 +47,78 @@ func (d *SectionDecoder) ReadSection(s Section) error {
 	if len(s) < 8 {
 		panic("section length should be >= 8")
 	}
+	var (
+		p   []byte
+		err error
+	)
+
+	// Waiting for packet where a payload starts
+	for {
+		if d.buffered {
+			d.buffered = false
+		} else {
+			if d.pkt, err = d.r.ReplacePkt(d.pkt); err != nil {
+				return err
+			}
+		}
+		p = d.pkt.Payload()
+		if len(p) == 0 {
+			continue
+		}
+		if d.pkt.Flags().PayloadStart() {
+			offset := int(p[0]) + 1
+			if offset >= len(p) {
+				return ErrSectionPointer
+			}
+			p = p[offset:]
+			break
+		}
+	}
+	// p contains begining of section, n number of bytes copied to s
+	n := copy(s[:3], p)
+	p = p[n:]
+	for n < 3 {
+		// p doesn't contain enough data
+		if d.pkt, err = d.r.ReplacePkt(d.pkt); err != nil {
+			return err
+		}
+		d.buffered = true // d.pkt contains next packet
+		p = d.pkt.Payload()
+		k := copy(s[n:3], p)
+		p = p[k:]
+		n += k
+	}
+	l := s.Len()
+	if l == -1 {
+		return ErrSectionLength
+	}
+	if l > len(s) {
+		return ErrSectionSpace
+	}
+	// Now we know section length, so we can copy data and read next packets
+	for {
+		k := copy(s[n:l], p)
+		n += k
+		if n == l {
+			break
+		}
+		if d.pkt, err = d.r.ReplacePkt(d.pkt); err != nil {
+			return err
+		}
+		d.buffered = true // d.pkt contains next packet
+		p = d.pkt.Payload()
+	}
+	// We read read all needed data.
+	if d.buffered && !d.pkt.Flags().PayloadStart() {
+		d.buffered = false // d.pkt doesn't contain begining of next section.
+	}
+	return nil
+}
+
+/*func (d *SectionDecoder) ReadSection(s Section) error {
+	if len(s) < 8 {
+		panic("section length should be >= 8")
+	}
 	n, limit := 0, -1
 	for {
 		if d.buffered {
@@ -120,4 +192,4 @@ func (d *SectionDecoder) ReadSection(s Section) error {
 		return ErrSectionCRC
 	}
 	return nil
-}
+}*/

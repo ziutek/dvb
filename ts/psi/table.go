@@ -72,7 +72,6 @@ func (t *Table) Update(r SectionReader, tableId byte, current bool) error {
 		if s.TableId() != tableId || s.Current() != current {
 			continue
 		}
-
 		// Always update maxN because sometimes provider updates table content
 		// without update version. In this case we can block waiting for section
 		// number that will never appear.
