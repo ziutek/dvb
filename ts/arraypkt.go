@@ -104,33 +104,33 @@ func (p *ArrayPkt) SetPrio(b bool) {
 }
 
 func (p *ArrayPkt) ScramblingCtrl() PktScramblingCtrl {
-	return PktScramblingCtrl((p[3] >> 2) & 3)
+	return PktScramblingCtrl((p[3] >> 6) & 3)
 }
 
 func (p *ArrayPkt) SetScramblingCtrl(sc PktScramblingCtrl) {
-	p[3] = p[3]&0xf3 | byte(sc&3)<<2
+	p[3] = p[3]&0x3f | byte(sc&3)<<6
 }
 
 func (p *ArrayPkt) ContainsAF() bool {
-	return p[3]&2 != 0
+	return p[3]&0x20 != 0
 }
 
 func (p *ArrayPkt) SetContainsAF(b bool) {
 	if b {
-		p[3] |= 2
+		p[3] |= 0x20
 	} else {
-		p[3] &^= 2
+		p[3] &^= 0x20
 	}
 }
 
 func (p *ArrayPkt) ContainsPayload() bool {
-	return p[3]&1 != 0
+	return p[3]&0x10 != 0
 }
 
 func (p *ArrayPkt) SetContainsPayload(b bool) {
 	if b {
-		p[3] |= 1
+		p[3] |= 0x10
 	} else {
-		p[3] &^= 1
+		p[3] &^= 0x10
 	}
 }

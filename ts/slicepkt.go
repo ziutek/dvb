@@ -86,7 +86,7 @@ func (p SlicePkt) AF() AF {
 }
 
 func (p SlicePkt) Payload() []byte {
-	if p.ContainsPayload() {
+	if !p.ContainsPayload() {
 		return nil
 	}
 	offset := 4
@@ -137,33 +137,33 @@ func (p SlicePkt) SetPrio(b bool) {
 }
 
 func (p SlicePkt) ScramblingCtrl() PktScramblingCtrl {
-	return PktScramblingCtrl((p[3] >> 2) & 3)
+	return PktScramblingCtrl((p[3] >> 6) & 3)
 }
 
 func (p SlicePkt) SetScramblingCtrl(sc PktScramblingCtrl) {
-	p[3] = p[3]&0xf3 | byte(sc&3)<<2
+	p[3] = p[3]&0x3f | byte(sc&3)<<6
 }
 
 func (p SlicePkt) ContainsAF() bool {
-	return p[3]&2 != 0
+	return p[3]&0x20 != 0
 }
 
 func (p SlicePkt) SetContainsAF(b bool) {
 	if b {
-		p[3] |= 2
+		p[3] |= 0x20
 	} else {
-		p[3] &^= 2
+		p[3] &^= 0x20
 	}
 }
 
 func (p SlicePkt) ContainsPayload() bool {
-	return p[3]&1 != 0
+	return p[3]&0x10 != 0
 }
 
 func (p SlicePkt) SetContainsPayload(b bool) {
 	if b {
-		p[3] |= 1
+		p[3] |= 0x10
 	} else {
-		p[3] &^= 1
+		p[3] &^= 0x10
 	}
 }
