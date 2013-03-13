@@ -20,62 +20,34 @@ type PktReader interface {
 	ReadPkt(Pkt) error
 }
 
-// PktReplacer is an interface that wraps the ReplacePkt method. After
-// ReplacePkt call caller should not reffer to p content any more.
-// If ReplacePkt returns an error it is guaranteed that r == p (but content
-// reffered by p can be modified). Generally ReplacePkt should be used in this
-// way:
-//
-//    p, err = q.ReplacePkt(p)
-//    if err != nil {
-//        ...
-//    }
-type PktReplacer interface {
-	// ReplacePkt consumes packet reffered by p an returns other packet reffered
-	// by r.
-	// If it returns ErrSync or dvb.ErrOverflow you can try to call ReplacePkt
-	// one more time.
-	ReplacePkt(p *ArrayPkt) (r *ArrayPkt, e error)
-}
-
-// PktReaderAsReplacer converts any PktReader to PktReplacer
-type PktReaderAsReplacer struct {
-	PktReader
-}
-
-func (r PktReaderAsReplacer) ReplacePkt(p *ArrayPkt) (*ArrayPkt, error) {
-	err := r.PktReader.ReadPkt(p)
-	return p, err
-}
-
-// PktStream wraps any io.Reader interface and returns PktReader and
+// PktStreamReader wraps any io.Reader interface and returns PktReader and
 // PktReplacer implementation for read MPEG-TS packets from stream of bytes.
 // Internally it doesn't allocate any memory so is friendly for real-time
 // applications (it doesn't cause GC to run).
 //
-// Using PktStream you can start read at any point in stream. If the start point
+// Using PktStreamReader you can start read at any point in stream. If the start point
 // doesn't match a beginning of a packet, PktReader returns ErrSync and
 // tries to synchronize during next read.
-type PktStream struct {
+type PktStreamReader struct {
 	r       io.Reader
 	syncBuf [3 * PktLen]byte
 	sbStart int
 }
 
 // SetReader sets new io.Reader as stream source. Forces resynchronization.
-func (p *PktStream) SetReader(r io.Reader) {
-	p.r = r
-	p.sbStart = -1
+func (s *PktStreamReader) SetReader(r io.Reader) {
+	s.r = r
+	s.sbStart = -1
 }
 
-// NewPktStreame is equivalent to p := new(PktStream); p.SetReader(r)
-func NewPktStream(r io.Reader) *PktStream {
-	s := new(PktStream)
+// NewPktStreamReader is equivalent to s := new(PktStreamReader); s.SetReader(r)
+func NewPktStreamReader(r io.Reader) *PktStreamReader {
+	s := new(PktStreamReader)
 	s.SetReader(r)
 	return s
 }
 
-func (s *PktStream) synchronize() (err error) {
+func (s *PktStreamReader) synchronize() (err error) {
 	b := s.syncBuf[:]
 	if s.sbStart == -1 {
 		// First try of synchronization - read full buffer (three packets)
@@ -114,7 +86,7 @@ func convertEoverflow(err error) error {
 // and tries to synchronize. ReadPkt check len(pkt) and panics if it isn't
 // PktLen (usefull if bound checking is disabled at compile time).
 // ReadPkt converts os.PathError{Err: syscall.EOVERFLOW} to dvb.ErrOverflow.
-func (s *PktStream) ReadPkt(pkt Pkt) error {
+func (s *PktStreamReader) ReadPkt(pkt Pkt) error {
 	if s.sbStart < 0 {
 		if err := s.synchronize(); err != nil {
 			return convertEoverflow(err)
@@ -139,9 +111,9 @@ func (s *PktStream) ReadPkt(pkt Pkt) error {
 }
 
 // ReplacePkt works like ReadPkt but implements PktReplacer interface.
-func (s *PktStream) ReplacePkt(p *ArrayPkt) (*ArrayPkt, error) {
-	err := s.ReadPkt(p)
-	return p, err
+func (s *PktStreamReader) ReplacePkt(pkt *ArrayPkt) (*ArrayPkt, error) {
+	err := s.ReadPkt(pkt)
+	return pkt, err
 }
 
 // Reader wraps PktReplacer or PktReader to implement a standard io.Reader

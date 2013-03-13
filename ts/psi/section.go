@@ -177,3 +177,8 @@ type SectionReader interface {
 	// dvb.TemporaryError type you can try read next section.
 	ReadSection(s Section) error
 }
+
+// SectionWriter is an interface wraps the WriteSection method.
+type SectionWriter interface {
+	WriteSection(s Section) error
+}

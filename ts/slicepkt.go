@@ -30,25 +30,50 @@ func (p SlicePkt) SyncOK() bool {
 	return p[0] == 0x47
 }
 
+func (p SlicePkt) SetSync() {
+	p[0] = 0x47
+}
+
 func (p SlicePkt) Pid() uint16 {
 	return uint16(p[1]&0x1f)<<8 | uint16(p[2])
 }
 
+func (p SlicePkt) SetPid(pid uint16) {
+	if pid > 8191 {
+		panic("Bad PID")
+	}
+	p[1] = p[1]&0xe0 | byte(pid>>8)
+	p[2] = byte(pid)
+}
+
 func (p SlicePkt) CC() byte {
-	return p[3] & 0xf
+	return p[3] & 0x0f
+}
+
+func (p SlicePkt) SetCC(b byte) {
+	p[3] = p[3]&0xf0 | b&0x0f
+}
+
+func (p SlicePkt) IncCC() {
+	b := p[3]
+	p[3] = b&0xf0 | (b+1)&0x0f
 }
 
 func (p SlicePkt) Flags() PktFlags {
 	return PktFlags(p[1]&0xe0 | (p[3] >> 4))
 }
 
+func (p SlicePkt) SetFlags(f PktFlags) {
+	p[1] = p[1]&0x1f | byte(f&0xf0)
+	p[3] = p[3]&0x0f | byte(f<<4)
+}
+
 func (p SlicePkt) AF() AF {
-	f := p.Flags()
-	if !f.ContainsAF() {
+	if !p.ContainsAF() {
 		return AF{}
 	}
 	alen := p[4]
-	if f.ContainsPayload() {
+	if p.ContainsPayload() {
 		if alen > 182 {
 			return nil
 		}
@@ -61,12 +86,11 @@ func (p SlicePkt) AF() AF {
 }
 
 func (p SlicePkt) Payload() []byte {
-	f := p.Flags()
-	if !f.ContainsPayload() {
+	if p.ContainsPayload() {
 		return nil
 	}
 	offset := 4
-	if f.ContainsAF() {
+	if p.ContainsAF() {
 		af := p.AF()
 		if af == nil {
 			return nil
@@ -74,4 +98,72 @@ func (p SlicePkt) Payload() []byte {
 		offset += len(af) + 1
 	}
 	return p[offset:]
+}
+
+func (p SlicePkt) ContainsError() bool {
+	return p[1]&0x80 != 0
+}
+
+func (p SlicePkt) SetContainsError(b bool) {
+	if b {
+		p[1] |= 0x80
+	} else {
+		p[1] &^= 0x80
+	}
+}
+
+func (p SlicePkt) PayloadStart() bool {
+	return p[1]&0x40 != 0
+}
+
+func (p SlicePkt) SetPayloadStart(b bool) {
+	if b {
+		p[1] |= 0x40
+	} else {
+		p[1] &^= 0x40
+	}
+}
+
+func (p SlicePkt) Prio() bool {
+	return p[1]&0x20 != 0
+}
+
+func (p SlicePkt) SetPrio(b bool) {
+	if b {
+		p[1] |= 0x20
+	} else {
+		p[1] &^= 0x20
+	}
+}
+
+func (p SlicePkt) ScramblingCtrl() PktScramblingCtrl {
+	return PktScramblingCtrl((p[3] >> 2) & 3)
+}
+
+func (p SlicePkt) SetScramblingCtrl(sc PktScramblingCtrl) {
+	p[3] = p[3]&0xf3 | byte(sc&3)<<2
+}
+
+func (p SlicePkt) ContainsAF() bool {
+	return p[3]&2 != 0
+}
+
+func (p SlicePkt) SetContainsAF(b bool) {
+	if b {
+		p[3] |= 2
+	} else {
+		p[3] &^= 2
+	}
+}
+
+func (p SlicePkt) ContainsPayload() bool {
+	return p[3]&1 != 0
+}
+
+func (p SlicePkt) SetContainsPayload(b bool) {
+	if b {
+		p[3] |= 1
+	} else {
+		p[3] &^= 1
+	}
 }

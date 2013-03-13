@@ -21,16 +21,42 @@ func (p *ArrayPkt) SyncOK() bool {
 	return p[0] == 0x47
 }
 
+func (p *ArrayPkt) SetSync() {
+	p[0] = 0x47
+}
+
 func (p *ArrayPkt) Pid() uint16 {
 	return uint16(p[1]&0x1f)<<8 | uint16(p[2])
+}
+
+func (p *ArrayPkt) SetPid(pid uint16) {
+	if pid > 8191 {
+		panic("Bad PID")
+	}
+	p[1] = p[1]&0xe0 | byte(pid>>8)
+	p[2] = byte(pid)
 }
 
 func (p *ArrayPkt) CC() byte {
 	return p[3] & 0xf
 }
 
+func (p *ArrayPkt) SetCC(b byte) {
+	p[3] = p[3]&0xf0 | b&0x0f
+}
+
+func (p *ArrayPkt) IncCC() {
+	b := p[3]
+	p[3] = b&0xf0 | (b+1)&0x0f
+}
+
 func (p *ArrayPkt) Flags() PktFlags {
-	return p.Slice().Flags()
+	return PktFlags(p[1]&0xe0 | (p[3] >> 4))
+}
+
+func (p *ArrayPkt) SetFlags(f PktFlags) {
+	p[1] = p[1]&0x1f | byte(f&0xf0)
+	p[3] = p[3]&0x0f | byte(f<<4)
 }
 
 func (p *ArrayPkt) AF() AF {
@@ -39,4 +65,72 @@ func (p *ArrayPkt) AF() AF {
 
 func (p *ArrayPkt) Payload() []byte {
 	return p.Slice().Payload()
+}
+
+func (p *ArrayPkt) ContainsError() bool {
+	return p[1]&0x80 != 0
+}
+
+func (p *ArrayPkt) SetContainsError(b bool) {
+	if b {
+		p[1] |= 0x80
+	} else {
+		p[1] &^= 0x80
+	}
+}
+
+func (p *ArrayPkt) PayloadStart() bool {
+	return p[1]&0x40 != 0
+}
+
+func (p *ArrayPkt) SetPayloadStart(b bool) {
+	if b {
+		p[1] |= 0x40
+	} else {
+		p[1] &^= 0x40
+	}
+}
+
+func (p *ArrayPkt) Prio() bool {
+	return p[1]&0x20 != 0
+}
+
+func (p *ArrayPkt) SetPrio(b bool) {
+	if b {
+		p[1] |= 0x20
+	} else {
+		p[1] &^= 0x20
+	}
+}
+
+func (p *ArrayPkt) ScramblingCtrl() PktScramblingCtrl {
+	return PktScramblingCtrl((p[3] >> 2) & 3)
+}
+
+func (p *ArrayPkt) SetScramblingCtrl(sc PktScramblingCtrl) {
+	p[3] = p[3]&0xf3 | byte(sc&3)<<2
+}
+
+func (p *ArrayPkt) ContainsAF() bool {
+	return p[3]&2 != 0
+}
+
+func (p *ArrayPkt) SetContainsAF(b bool) {
+	if b {
+		p[3] |= 2
+	} else {
+		p[3] &^= 2
+	}
+}
+
+func (p *ArrayPkt) ContainsPayload() bool {
+	return p[3]&1 != 0
+}
+
+func (p *ArrayPkt) SetContainsPayload(b bool) {
+	if b {
+		p[3] |= 1
+	} else {
+		p[3] &^= 1
+	}
 }
