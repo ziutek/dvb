@@ -168,16 +168,6 @@ func (s Section) String() string {
 	)
 }
 
-// SectionReader is an interface that wraps the ReadSection method.
-type SectionReader interface {
-	// ReadSection reads one section into s. len(s) should be equal to
-	// MaxSectionLen or MaxISOSectionLen (if you read standard PSI tables). You
-	// can use shorter s (but not shorter that 8 bytes) if you are sure that
-	// read section should fit in it. If ReadSection returned error of
-	// dvb.TemporaryError type you can try read next section.
-	ReadSection(s Section) error
-}
-
 // SectionWriter is an interface wraps the WriteSection method.
 type SectionWriter interface {
 	WriteSection(s Section) error

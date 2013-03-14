@@ -108,11 +108,14 @@ func (d *SectionDecoder) ReadSection(s Section) error {
 		d.buffered = true // d.pkt contains next packet
 		p = d.pkt.Payload()
 	}
-	// We read read all needed data.
+	// We read all needed data.
 	if d.buffered && !d.pkt.Flags().PayloadStart() {
 		d.buffered = false // d.pkt doesn't contain begining of next section.
 	}
-	return nil
+	if s.CheckCRC() {
+		return nil
+	}
+	return ErrSectionCRC
 }
 
 /*func (d *SectionDecoder) ReadSection(s Section) error {

@@ -15,7 +15,7 @@ var (
 // PktReader is an interface that wraps the ReadPkt method.
 type PktReader interface {
 	// ReadPkt reads one MPEG-TS packet.
-	// If it returns ErrSync or dvb.ErrOverflow you can try to Read next
+	// If it returns ErrSync or dvb.ErrOverflow you can try to read next
 	// packet.
 	ReadPkt(Pkt) error
 }
@@ -40,7 +40,8 @@ func (s *PktStreamReader) SetReader(r io.Reader) {
 	s.sbStart = -1
 }
 
-// NewPktStreamReader is equivalent to s := new(PktStreamReader); s.SetReader(r)
+// NewPktStreamReader is equivalent to:
+//	s := new(PktStreamReader); s.SetReader(r)
 func NewPktStreamReader(r io.Reader) *PktStreamReader {
 	s := new(PktStreamReader)
 	s.SetReader(r)

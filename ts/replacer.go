@@ -13,8 +13,9 @@ package ts
 type PktReplacer interface {
 	// ReplacePkt consumes packet reffered by p an returns other packet reffered
 	// by r.
-	// ErrSync or dvb.ErrOverflow are not fatal errors. You can still call
-	// ReplacePkt after obtaining such errors.
+	// If you use ReplacePkt for reading ErrSync or dvb.ErrOverflow are not
+	// fatal errors. You can still call ReplacePkt after obtaining such errors.
+	// If you use ReplacePkt for writing, any error is probably a problem.
 	ReplacePkt(p *ArrayPkt) (r *ArrayPkt, e error)
 }
 
