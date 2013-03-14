@@ -484,11 +484,15 @@ func (e *Event) ParamDVBC() *ParamDVBC {
 	return (*ParamDVBC)(unsafe.Pointer(&e.param))
 }
 
-// WaitEvent can return dvb.ErrOverflow. If timeout > 0 it waits for timeout
-// ns and returns true if doesn't receive any event.
-func (f API3) WaitEvent(ev *Event, timeout time.Duration) (bool, error) {
+// WaitEvent can return dvb.ErrOverflow. If deadline is non zero time WaitEvent
+// returns true if it doesn't receive any event up to deatline.
+func (f API3) WaitEvent(ev *Event, deadline time.Time) (bool, error) {
 	fd := f.Fd()
-	if timeout > 0 {
+	if !deadline.IsZero() {
+		timeout := deadline.Sub(time.Now())
+		if timeout <= 0 {
+			return true, nil
+		}
 		var r syscall.FdSet
 		r.Bits[fd/64] = 1 << (fd % 64)
 		tv := syscall.NsecToTimeval(int64(timeout))
