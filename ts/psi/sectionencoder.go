@@ -2,7 +2,6 @@ package psi
 
 import (
 	"github.com/ziutek/dvb/ts"
-	"log"
 )
 
 // SectionEncoder can encode sections into stream of MPEG-TS packets. It has
@@ -25,7 +24,7 @@ func (e *SectionEncoder) setupPktHeader() {
 	e.cc++
 }
 
-// NewSectionDecoder creates section decoder. You can use r == nil and
+// NewSectionEncoder creates section encoder. You can use r == nil and
 // set it lather using SetPktReplacer or SetPktWriter method.
 func NewSectionEncoder(r ts.PktReplacer, pid uint16) *SectionEncoder {
 	e := &SectionEncoder{
@@ -66,25 +65,31 @@ func (e *SectionEncoder) WriteSection(s Section) error {
 		return nil
 	}
 	if e.offset > 0 {
-		var err error
 		// e.pkt contains some data from previous section
-		if e.pkt.PayloadStart() {
-			// Previous section starts and ends in this packet. We can't add any
-			// data to it.
-			err = e.Flush()
+		p := e.pkt.Payload()
+		if e.pkt.PayloadStart() || e.offset+2 >= len(p) {
+			// Previous section starts and ends in this packet or there is no
+			// place for even one byte in it.
+			if err := e.Flush(); err != nil {
+				return err
+			}
 			e.pkt.SetPayloadStart(true) // section will start in new packet
-			e.pkt.Payload()[0] = 0      // pointer_field
+			e.pkt.Payload()[0] = 0      // set pointer_field in new packet
 			e.offset++
 		} else {
-			// Previous section ends in this packet, but doesn't start in it.
-			// We can add begineng of new section to it.
-			e.pkt.SetPayloadStart(true)
-			n := copy(e.pkt.Payload()[e.offset:], s)
+			// There is place for at least one byte of new section in this
+			// packet.
+			copy(p[1:], p[:e.offset])   // move data to add pointer field
+			p[0] = byte(e.offset)       // set pointer_field
+			e.pkt.SetPayloadStart(true) // section starts in current packet
+			e.offset++
+			n := copy(p[e.offset:], s)
 			s = s[n:]
-			err = e.Flush() // we allways need to flush such packet
-		}
-		if err != nil {
-			return err
+			// Write this packet (with pading if there is no enough data in
+			// section to fill it fully)
+			if err := e.Flush(); err != nil {
+				return err
+			}
 		}
 	} else {
 		// e.pkt is empty.
@@ -92,18 +97,11 @@ func (e *SectionEncoder) WriteSection(s Section) error {
 		e.pkt.Payload()[0] = 0      // pointer_field
 		e.offset++
 	}
-	// At this point we allways have an empty e.pkt with valid header and
+	// At this point we allways have an empty e.pkt with valid header,
 	// properly set payload_start_indicator and pointer_field
 
 	for len(s) > 0 {
-		log.Print("len(s):", len(s))
-		p := e.pkt.Payload()
-		if len(s)+1 < len(p) && !e.pkt.PayloadStart() {
-			// This is the last packet of current section and there will be a
-			// place for at least one byte of next section in current packet.
-			p[0] = len(s) // pointer_field
-			p = p[1:]
-		}
+		p := e.pkt.Payload()[e.offset:]
 		n := copy(p, s)
 		s = s[n:]
 		e.offset += n

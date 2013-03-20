@@ -10,7 +10,7 @@ import (
 )
 
 const usage = `Usage: ss2ts PID
-ss2ts reads section stream from stdin and writes transport stream to stdout.`
+ss2ts encapsulates section stream from stdin into transport stream on stdout.`
 
 func checkErr(err error) {
 	if err != nil {
