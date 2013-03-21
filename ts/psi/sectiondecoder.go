@@ -3,7 +3,6 @@ package psi
 import (
 	"github.com/ziutek/dvb"
 	"github.com/ziutek/dvb/ts"
-	"log"
 )
 
 var (
@@ -95,7 +94,6 @@ func (d *SectionDecoder) ReadSection(s Section) error {
 		return ErrSectionLength
 	}
 	if l > len(s) {
-		log.Println("l > len(s)", l, len(s))
 		return ErrSectionSpace
 	}
 	// Now we know section length, so we can copy data and read next packets
