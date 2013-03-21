@@ -26,7 +26,7 @@ func main() {
 
 	pid, err := strconv.ParseUint(os.Args[1], 0, 64)
 	checkErr(err)
-	if pid == 0 || pid > 8191 {
+	if pid > 8191 {
 		log.Fatal(pid, "isn't valid PID")
 	}
 
