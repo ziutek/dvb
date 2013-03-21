@@ -3,6 +3,7 @@ package psi
 import (
 	"github.com/ziutek/dvb"
 	"github.com/ziutek/dvb/ts"
+	"log"
 )
 
 var (
@@ -18,12 +19,13 @@ type SectionDecoder struct {
 	r        ts.PktReplacer
 	pkt      *ts.ArrayPkt
 	buffered bool // Not processed data in pkt
+	checkCRC bool
 }
 
 // NewSectionDecoder creates section decoder. You can use r == nil and
 // set source of packets lather using SetPktReplacer or SetPktReader method.
-func NewSectionDecoder(r ts.PktReplacer) *SectionDecoder {
-	return &SectionDecoder{r: r, pkt: new(ts.ArrayPkt)}
+func NewSectionDecoder(r ts.PktReplacer, checkCRC bool) *SectionDecoder {
+	return &SectionDecoder{r: r, pkt: new(ts.ArrayPkt), checkCRC: checkCRC}
 }
 
 // SetPktReplacer sets ts.PktReplacer that will be used as data source
@@ -93,6 +95,7 @@ func (d *SectionDecoder) ReadSection(s Section) error {
 		return ErrSectionLength
 	}
 	if l > len(s) {
+		log.Println("l > len(s)", l, len(s))
 		return ErrSectionSpace
 	}
 	// Now we know section length, so we can copy data and read next packets
@@ -114,6 +117,9 @@ func (d *SectionDecoder) ReadSection(s Section) error {
 	// We read all needed data.
 	if d.buffered && !d.pkt.Flags().PayloadStart() {
 		d.buffered = false // d.pkt doesn't contain begining of next section.
+	}
+	if !d.checkCRC {
+		return nil
 	}
 	if s.CheckCRC() {
 		return nil

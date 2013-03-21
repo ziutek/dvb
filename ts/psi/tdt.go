@@ -5,10 +5,12 @@ import (
 	"time"
 )
 
+const TDTLen = 3 + 5
+
 type TDT Section
 
 func NewTDT() TDT {
-	return TDT(make(Section, 12))
+	return TDT(make(Section, TDTLen))
 }
 
 // Returns -1 if error
@@ -38,15 +40,16 @@ func (t TDT) UTC() (utc time.Time) {
 	if s == -1 {
 		return
 	}
-	mjd := (uint(t[3])<<8 | uint(t[4])) * 10000
-	year := (mjd - 150782000) / 3652500
-	month := (mjd - 149561000 - year*3652500) / 306001
-	day := (mjd - 149560000 - year*3652500 - month*306001) / 10000
+	mjd := float64(int(t[3])<<8 | int(t[4]))
+	year := int((mjd - 15078.2) / 365.25)
+	month := int((mjd - 14956.1 - float64(int(float64(year)*365.25))) / 30.6001)
+	day := int(mjd) - 14956 - int(float64(year)*365.25) - int(float64(month)*30.6001)
 	if month == 14 || month == 15 {
 		year++
 		month -= 12
 	}
 	month--
+	year += 1900
 	return time.Date(int(year), time.Month(month), int(day), h, m, s, 0, time.UTC)
 }
 
@@ -60,8 +63,7 @@ func (t TDT) Update(r SectionReader) error {
 	if err != nil {
 		return err
 	}
-	if s.Len() != 12 || s.TableId() != 0x70 || !s.GenericSyntax() ||
-		s.Number() != 0 || s.LastNumber() != 0 {
+	if s.Len() != TDTLen || s.TableId() != 0x70 {
 		return ErrTDTSectionSyntax
 	}
 	return nil
