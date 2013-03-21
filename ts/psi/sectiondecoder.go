@@ -107,6 +107,9 @@ func (d *SectionDecoder) ReadSection(s Section) error {
 		}
 		d.buffered = true // d.pkt contains next packet
 		p = d.pkt.Payload()
+		if d.pkt.PayloadStart() {
+			p = p[1:] // skip pointer_field
+		}
 	}
 	// We read all needed data.
 	if d.buffered && !d.pkt.Flags().PayloadStart() {

@@ -85,6 +85,7 @@ func (e *SectionEncoder) WriteSection(s Section) error {
 			e.offset++
 			n := copy(p[e.offset:], s)
 			s = s[n:]
+			e.offset += n
 			// Write this packet (with pading if there is no enough data in
 			// section to fill it fully)
 			if err := e.Flush(); err != nil {
