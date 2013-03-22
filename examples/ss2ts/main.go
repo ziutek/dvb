@@ -31,7 +31,7 @@ func main() {
 	}
 
 	s := make(psi.Section, psi.SectionMaxLen)
-	r := psi.NewSectionStreamReader(os.Stdin, true)
+	r := psi.NewSectionStreamReader(os.Stdin, pid != 20)
 	w := psi.NewSectionEncoder(ts.PktStreamWriter{os.Stdout}, uint16(pid))
 	for {
 		err := r.ReadSection(s)
