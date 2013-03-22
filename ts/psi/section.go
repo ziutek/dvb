@@ -23,6 +23,9 @@ func (s Section) SetTableId(id byte) {
 
 // TableIdExt returns the value of table_id_extension
 func (s Section) TableIdExt() uint16 {
+	if !s.GenericSyntax() {
+		panic("GenericSyntax need for TableIdExt")
+	}
 	return decodeU16(s[3:5])
 }
 
@@ -83,6 +86,9 @@ func (s Section) SetLen(l int) {
 
 // Version returns the value of version_number field
 func (s Section) Version() byte {
+	if !s.GenericSyntax() {
+		panic("GenericSyntax need for Version")
+	}
 	return (s[5] >> 1) & 0x1f
 }
 
@@ -97,6 +103,9 @@ func (s Section) SetVerison(v byte) {
 
 // Current returns the value of current_next_indicator field
 func (s Section) Current() bool {
+	if !s.GenericSyntax() {
+		panic("GenericSyntax need for Current")
+	}
 	return s[5]&0x01 != 0
 }
 
@@ -111,6 +120,9 @@ func (s Section) SetCurrent(c bool) {
 
 // Number returns the value of section_number field
 func (s Section) Number() byte {
+	if !s.GenericSyntax() {
+		panic("GenericSyntax need for Number")
+	}
 	return s[6]
 }
 
@@ -121,6 +133,9 @@ func (s Section) SetNumber(n byte) {
 
 // LastNumber returns the value of last_section_number field
 func (s Section) LastNumber() byte {
+	if !s.GenericSyntax() {
+		panic("GenericSyntax need for LastNumber")
+	}
 	return s[7]
 }
 
@@ -131,6 +146,9 @@ func (s Section) SetLastNumber(n byte) {
 
 // Data rturns data part of section
 func (s Section) Data() []byte {
+	if !s.GenericSyntax() {
+		panic("GenericSyntax need for Data")
+	}
 	end := s.Len() - 4
 	if end == -1-4 || end > len(s) {
 		panic("there is no enough data or section_length has incorrect value")

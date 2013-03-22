@@ -1,5 +1,10 @@
 package psi
 
+import (
+	"errors"
+	"time"
+)
+
 func decodeU32(b []byte) uint32 {
 	if len(b) != 4 {
 		panic("decodeU32 with len(b) != 4")
@@ -31,6 +36,57 @@ func encodeU16(b []byte, v uint16) {
 	}
 	b[0] = byte(v >> 8)
 	b[1] = byte(v)
+}
+
+func decodeBCD(bcd byte) byte {
+	h := bcd >> 4
+	if h > 9 {
+		return 0xff
+	}
+	l := bcd & 0x0f
+	if l > 9 {
+		return 0xff
+	}
+	return h*10 + l
+}
+
+var ErrBadMJDUTC = errors.New("bad MJD UTC time")
+
+func decodeMJDUTC(b []byte) (utc time.Time, err error) {
+	if len(b) != 5 {
+		panic("encodeMJDUTC with len(b) != 5")
+	}
+	hour := decodeBCD(b[2])
+	if hour == 0xff {
+		err = ErrBadMJDUTC
+		return
+	}
+	min := decodeBCD(b[3])
+	if min == 0xff {
+		err = ErrBadMJDUTC
+		return
+	}
+	sec := decodeBCD(b[4])
+	if sec == 0xff {
+		err = ErrBadMJDUTC
+		return
+	}
+	mjd := float64(int(b[0])<<8 | int(b[1]))
+	year := int((mjd - 15078.2) / 365.25)
+	month := int((mjd - 14956.1 - float64(int(float64(year)*365.25))) / 30.6001)
+	day := int(mjd) - 14956 - int(float64(year)*365.25) - int(float64(month)*30.6001)
+	if month == 14 || month == 15 {
+		year++
+		month -= 12
+	}
+	month--
+	year += 1900
+	utc = time.Date(
+		int(year), time.Month(month), int(day),
+		int(hour), int(min), int(sec), 0,
+		time.UTC,
+	)
+	return
 }
 
 var crcTable [256]uint32
