@@ -6,10 +6,6 @@ import (
 
 type PMT Section
 
-func NewPMT() PMT {
-	return PMT(make(Section, ISOSectionMaxLen))
-}
-
 func (p PMT) Version() byte {
 	return Section(p).Version()
 }
@@ -42,6 +38,19 @@ var (
 	ErrPMTSectionSyntax = dvb.TemporaryError("incorrect PMT section syntax")
 	ErrPMTProgInfoLen   = dvb.TemporaryError("incorrect PMT program info length")
 )
+
+// AsPMT returns s as PMT or error if s isn't PMT section
+func AsPMT(s Section) (PMT, error) {
+	if s.TableId() != 2 || !s.GenericSyntax() || s.Number() != 0 ||
+		s.LastNumber() != 0 {
+		return nil, ErrPMTSectionSyntax
+	}
+	p := PMT(s)
+	if p.progInfoLen()+4 > len(s.Data()) {
+		return nil, ErrPMTProgInfoLen
+	}
+	return p, nil
+}
 
 func (p PMT) Update(r SectionReader) error {
 	s := Section(p)
