@@ -14,7 +14,7 @@ import (
 func checkErr(err error) {
 	if err != nil {
 		fmt.Fprintln(os.Stdout, err)
-		if err != dvb.ErrOverflow {
+		if err != dvb.ErrOverflow && err != ts.ErrSync {
 			os.Exit(1)
 		}
 	}
@@ -61,6 +61,7 @@ func main() {
 	f, err := demux.Device(adapter + "/demux0").StreamFilter(&filterParam)
 	checkErr(err)
 	defer f.Close()
+	checkErr(f.SetBufferLen(1024 * ts.PktLen))
 	checkErr(f.Start())
 
 	r := ts.NewPktStreamReader(f)
