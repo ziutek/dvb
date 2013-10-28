@@ -19,7 +19,7 @@ const (
 
 // SecParam calculates intermediate frequency, tone and voltage for given
 // absolute frequency (HZ) and polarization ('h' or 'v').
-func SecParam(freq uint32, polarization byte) (f uint32, t Tone, v Voltage) {
+func SecParam(freq uint64, polarization byte) (f uint32, t Tone, v Voltage) {
 	switch polarization {
 	case 'h':
 		v = Voltage18
@@ -28,11 +28,11 @@ func SecParam(freq uint32, polarization byte) (f uint32, t Tone, v Voltage) {
 	default:
 		panic("unknown polarization")
 	}
-	if freq < 11700000 {
-		f = freq - 9750000
+	if freq < 11700e6 {
+		f = uint32(freq-9750e6) / 1000
 		t = ToneOff
 	} else {
-		f = freq - 10600000
+		f = uint32(freq-10600e6) / 1000
 		t = ToneOn
 	}
 	return
