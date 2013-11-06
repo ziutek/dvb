@@ -458,7 +458,7 @@ func (f API3) UncorrectedBlocks() (ublocks uint32, err error) {
 		uintptr(unsafe.Pointer(&ublocks)),
 	)
 	if e != 0 {
-		err = Error{"get", "ber", e}
+		err = Error{"get", "uncorrected_blocks", e}
 	}
 	return
 }
