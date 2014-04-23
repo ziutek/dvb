@@ -133,8 +133,7 @@ func ParseServiceListDescriptor(d Descriptor) (sld ServiceListDescriptor, ok boo
 }
 
 // Pop returns first (sid, typ) pair from d. Remaining pairs are returned in rd.
-// If there is no more pairs to read len(rd) == 0.
-// If an error occurs rd = nil
+// If there is no more pairs to read len(rd) == 0. If an error occurs rd = nil
 func (d ServiceListDescriptor) Pop() (sid uint16, typ ServiceType, rd ServiceListDescriptor) {
 	if len(d) < 3 {
 		return
@@ -175,6 +174,9 @@ func ParseTerrestrialDeliverySystemDescriptor(d Descriptor) (tds TerrestrialDeli
 		return
 	}
 	data := d.Data()
+	if len(data) < 11 {
+		return
+	}
 	tds.Freq = uint64(decodeU32(data[0:4])) * 10
 	switch data[4] >> 5 {
 	case 0:
@@ -213,5 +215,70 @@ func ParseTerrestrialDeliverySystemDescriptor(d Descriptor) (tds TerrestrialDeli
 	}
 	tds.OtherFreq = data[6]&0x01 != 0
 	ok = true
+	return
+}
+
+type CADescriptor struct {
+	SysID uint16
+	Pid   uint16
+}
+
+func ParseCADescriptor(d Descriptor) (cad CADescriptor, ok bool) {
+	if d.Tag() != CATag {
+		return
+	}
+	data := d.Data()
+	if len(data) < 4 {
+		return
+	}
+	cad.SysID = decodeU16(data[0:2])
+	cad.Pid = decodeU16(data[2:4]) & 0x1fff
+	ok = true
+	return
+}
+
+type ISO639LangDescriptor []byte
+
+func ParseISO639LangDescriptor(d Descriptor) (ld ISO639LangDescriptor, ok bool) {
+	if d.Tag() != ISO639LangTag {
+		return
+	}
+	return ISO639LangDescriptor(d.Data()), true
+}
+
+type AudioType byte
+
+const (
+	UndefinedAudio AudioType = iota
+	CleanEffectsAudio
+	HearingImpairedAudio
+	VisualImpairedCommentaryAudio
+)
+
+var atn = []string{
+	"undefined",
+	"clean effects",
+	"hearing impaired",
+	"visual impaired commentary",
+}
+
+func (t AudioType) String() string {
+	if t > VisualImpairedCommentaryAudio {
+		return "reserved"
+	}
+	return atn[t]
+}
+
+type ISO639LangCode uint32
+
+// Pop returns first (lc, at) pair from d. Remaining pairs are returned in rd.
+// If there is no more pairs to read len(rd) == 0. If an error occurs rd = nil
+func (d ISO639LangDescriptor) Pop() (lc ISO639LangCode, at AudioType, rd ISO639LangDescriptor) {
+	if len(d) < 4 {
+		return
+	}
+	lc = ISO639LangCode(decodeU24(d[0:3]))
+	at = AudioType(d[3])
+	rd = d[4:]
 	return
 }

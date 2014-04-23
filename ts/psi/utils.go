@@ -13,6 +13,13 @@ func decodeU32(b []byte) uint32 {
 		uint32(b[3])
 }
 
+func decodeU24(b []byte) uint32 {
+	if len(b) != 3 {
+		panic("decodeU24 with len(b) != 3")
+	}
+	return uint32(b[0])<<16 | uint32(b[1])<<8 | uint32(b[2])
+}
+
 func decodeU16(b []byte) uint16 {
 	if len(b) != 2 {
 		panic("decodeU16 with len(b) != 2")

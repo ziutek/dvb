@@ -38,6 +38,9 @@ func (dl DescriptorList) Append(d Descriptor) DescriptorList {
 type DescriptorTag byte
 
 const (
+	CATag         DescriptorTag = 0x09
+	ISO639LangTag DescriptorTag = 0x0a
+
 	NetworkNameTag               DescriptorTag = 0x40
 	ServiceListTag               DescriptorTag = 0x41
 	StuffingTag                  DescriptorTag = 0x42
