@@ -2,6 +2,7 @@ package psi
 
 import (
 	"github.com/ziutek/dvb"
+	"strconv"
 )
 
 type ServiceType byte
@@ -218,9 +219,76 @@ func ParseTerrestrialDeliverySystemDescriptor(d Descriptor) (tds TerrestrialDeli
 	return
 }
 
+type CAS uint16
+
+var casn = map[CAS]string{
+	0x0100: "Mediaguard",
+
+	0x0b00: "Conax",
+	0x0b01: "Conax",
+	0x0b02: "Conax",
+	0x0b03: "Conax",
+	0x0b04: "Conax",
+	0x0b05: "Conax",
+	0x0b06: "Conax",
+	0x0b07: "Conax",
+	0x0baa: "Conax",
+
+	0x0d00: "Cryptoworks",
+	0x0d02: "Cryptoworks",
+	0x0d03: "Cryptoworks",
+	0x0d05: "Cryptoworks",
+	0x0d07: "Cryptoworks",
+	0x0d20: "Cryptoworks",
+
+	0x0500: "Viaccess",
+
+	0x0602: "Irdeto",
+	0x0604: "Irdeto",
+	0x0606: "Irdeto",
+	0x0608: "Irdeto",
+	0x0622: "Irdeto",
+	0x0626: "Irdeto",
+	0x0664: "Irdeto",
+	0x0614: "Irdeto",
+	0x0692: "Irdeto",
+
+	0x0911: "Videoguard",
+	0x0919: "Videoguard",
+	0x0960: "Videoguard",
+	0x0961: "Videoguard",
+	0x093b: "Videoguard",
+	0x0963: "Videoguard",
+	0x09AC: "Videoguard",
+	0x0927: "Videoguard",
+
+	0x0700: "DigiCipher2",
+
+	0x0E00: "PowerVu",
+
+	0x1702: "Nagravision",
+	0x1722: "Nagravision",
+	0x1762: "Nagravision",
+	0x1800: "Nagravision",
+	0x1801: "Nagravision",
+	0x1810: "Nagravision",
+	0x1830: "Nagravision",
+
+	0x4AEA: "Cryptoguard",
+}
+
+func (cas CAS) String() string {
+	name := casn[cas]
+	s := strconv.FormatUint(uint64(cas), 16)
+	if name == "" {
+		return s
+	}
+	return name + "(" + s + ")"
+}
+
 type CADescriptor struct {
-	SysID uint16
-	Pid   uint16
+	Sys CAS
+	Pid uint16
 }
 
 func ParseCADescriptor(d Descriptor) (cad CADescriptor, ok bool) {
@@ -231,7 +299,7 @@ func ParseCADescriptor(d Descriptor) (cad CADescriptor, ok bool) {
 	if len(data) < 4 {
 		return
 	}
-	cad.SysID = decodeU16(data[0:2])
+	cad.Sys = CAS(decodeU16(data[0:2]))
 	cad.Pid = decodeU16(data[2:4]) & 0x1fff
 	ok = true
 	return
