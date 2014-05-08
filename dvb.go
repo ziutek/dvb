@@ -9,5 +9,5 @@ func (e TemporaryError) Error() string {
 var (
 	// ErrOverflow means that some buffer has been overflowed and some data
 	// has been lost.
-	ErrOverflow = TemporaryError("buffering overflow")
+	ErrOverflow = TemporaryError("dvb: buffer overflow")
 )
