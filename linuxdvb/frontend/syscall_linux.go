@@ -19,6 +19,7 @@ const (
 
 // API5
 const (
-	_FE_SET_PROPERTY = 0x40086f52
-	_FE_GET_PROPERTY = 0x80086f53
+	// Values for kernel 3.16 (check using checksyscall/main.c)
+	_FE_SET_PROPERTY = 0x40106f52
+	_FE_GET_PROPERTY = 0x80106f53
 )

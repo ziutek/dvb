@@ -5,7 +5,7 @@ type DeliverySystem uint32
 
 const (
 	SysUndefined DeliverySystem = iota
-	SysDVBCAnnexAC
+	SysDVBCAnnexA
 	SysDVBCAnnexB
 	SysDVBT
 	SysDSS
@@ -22,6 +22,7 @@ const (
 	SysDAB
 	SysDVBT2
 	SysTURBO
+	SysDVBCAnnexC
 )
 
 var dsn = []string{

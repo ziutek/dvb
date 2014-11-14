@@ -19,7 +19,7 @@ const (
 
 // SecParam calculates intermediate frequency, tone and voltage for given
 // absolute frequency (HZ) and polarization ('h' or 'v').
-func SecParam(freq uint64, polarization byte) (f uint32, t Tone, v Voltage) {
+func SecParam(freq uint64, polarization rune) (f uint32, t Tone, v Voltage) {
 	switch polarization {
 	case 'h':
 		v = Voltage18

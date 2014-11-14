@@ -82,8 +82,9 @@ const (
 type property struct {
 	cmd      cmd
 	reserved [3]uint32
+	
+	// union
 	data     uint32
-
 	bufData      [28]byte
 	bufLen       uint32
 	bufReserved1 [3]uint32
