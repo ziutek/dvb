@@ -20,7 +20,6 @@ const (
 	dmxpath = adpath + "/demux0"
 	dvrpath = adpath + "/dvr0"
 	freq    = 778 // MHz
-	//freq   = 674 // MHz
 	pcrpid = 202
 )
 
@@ -82,7 +81,7 @@ func (p *PCR) Loop(dvr ts.PktReader) {
 		checkErr(t.SetSchedPolicy(sched.FIFO, &p))
 	} else {
 		fmt.Println(
-			"Running without root privilages: realtime scheduling disabled",
+			"Running without root privileges: realtime scheduling disabled",
 		)
 	}
 	fmt.Println()
