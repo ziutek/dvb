@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/ziutek/dvb"
@@ -31,7 +32,7 @@ func checkErr(err error) {
 func usage() {
 	fmt.Fprintf(
 		os.Stderr,
-		"Usage: %s [OPTION]\nOptions:\n",
+		"Usage: %s [OPTION] PID [PID...]\nOptions:\n",
 		filepath.Base(os.Args[0]),
 	)
 	flag.PrintDefaults()
@@ -45,8 +46,21 @@ func main() {
 	freq := flag.Uint("freq", 0, "frequency [Mhz]")
 	sr := flag.Uint("sr", 0, "symbol rate [kBd]")
 	pol := flag.String("pol", "h", "polarization: h, v")
+	count := flag.Uint64("count", 0, "number of MPEG-TS packets to process (0 means infinity)")
 	flag.Usage = usage
 	flag.Parse()
+	if flag.NArg() == 0 {
+		usage()
+	}
+	pids := make([]uint16, flag.NArg())
+	for i, a := range flag.Args() {
+		pid, err := strconv.ParseUint(a, 0, 16)
+		checkErr(err)
+		if pid > 8192 {
+			die(a + " isn't in valid PID range [0, 8192]")
+		}
+		pids[i] = uint16(pid)
+	}
 
 	var polar rune
 	switch *pol {
@@ -111,7 +125,7 @@ func main() {
 	checkErr(waitForTune(fe))
 
 	var filterParam = demux.StreamFilterParam{
-		Pid:  8192,
+		Pid:  pids[0],
 		In:   demux.InFrontend,
 		Out:  demux.OutTSDemuxTap,
 		Type: demux.Other,
@@ -119,16 +133,28 @@ func main() {
 	f, err := demux.Device(*dpath).StreamFilter(&filterParam)
 	checkErr(err)
 	defer f.Close()
+	for _, pid := range pids[1:] {
+		checkErr(f.AddPid(pid))
+	}
 	checkErr(f.SetBufferLen(1024 * 188))
 	checkErr(f.Start())
 
 	r := ts.NewPktStreamReader(f)
 	pkt := new(ts.ArrayPkt)
 
-	for {
+	if *count == 0 {
+		for {
+			checkErr(r.ReadPkt(pkt))
+			_, err = os.Stdout.Write(pkt.Bytes())
+			checkErr(err)
+		}
+		return
+	}
+	for *count != 0 {
 		checkErr(r.ReadPkt(pkt))
 		_, err = os.Stdout.Write(pkt.Bytes())
 		checkErr(err)
+		*count--
 	}
 }
 
