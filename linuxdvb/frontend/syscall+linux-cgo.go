@@ -1,3 +1,5 @@
+// +build linux,!cgo
+
 package frontend
 
 // API3
