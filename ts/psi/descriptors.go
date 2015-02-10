@@ -350,3 +350,16 @@ func (d ISO639LangDescriptor) Pop() (lc ISO639LangCode, at AudioType, rd ISO639L
 	rd = d[4:]
 	return
 }
+
+type StreamIdentifierDescriptor byte
+
+func ParseStreamIdentifierDescriptor(d Descriptor) (sid StreamIdentifierDescriptor, ok bool) {
+	if d.Tag() != StreamIdentifierTag {
+		return
+	}
+	data := d.Data()
+	if len(data) != 1 {
+		return
+	}
+	return StreamIdentifierDescriptor(data[0]), true
+}
