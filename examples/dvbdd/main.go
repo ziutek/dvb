@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -40,18 +41,23 @@ func usage() {
 }
 
 func main() {
+	src := flag.String("src", "rf", "source: rf, udp")
+	laddr := flag.String("laddr", "0.0.0.0:1234", "listen on laddr")
 	fpath := flag.String("front", "/dev/dvb/adapter0/frontend0", "path to frontend device")
 	dpath := flag.String("demux", "/dev/dvb/adapter0/demux0", "path to demux device")
 	sys := flag.String("sys", "t", "name of delivery system: t, s, s2, ca, cb, cc")
-	freq := flag.Uint("freq", 0, "frequency [Mhz]")
+	freq := flag.Float64("freq", 0, "frequency [Mhz]")
 	sr := flag.Uint("sr", 0, "symbol rate [kBd]")
 	pol := flag.String("pol", "h", "polarization: h, v")
 	count := flag.Uint64("count", 0, "number of MPEG-TS packets to process (0 means infinity)")
+	bw := flag.Uint("bw", 0, "bandwidth [MHz] (0 == auto)")
 	flag.Usage = usage
 	flag.Parse()
+
 	if flag.NArg() == 0 {
 		usage()
 	}
+
 	pids := make([]uint16, flag.NArg())
 	for i, a := range flag.Args() {
 		pid, err := strconv.ParseUint(a, 0, 16)
@@ -62,32 +68,94 @@ func main() {
 		pids[i] = uint16(pid)
 	}
 
-	var polar rune
-	switch *pol {
-	case "h", "v":
-		polar = rune((*pol)[0])
+	var r ts.PktReader
+
+	switch *src {
+	case "rf":
+		r = tune(*fpath, *dpath, *sys, *pol, uint64(*freq*1e6), uint64(*bw)*1e6, *sr, pids)
+	case "udp":
+		r = listenUDP(*laddr, pids)
 	default:
-		die("unknown polarization: " + *pol)
+		die("Unknown source: " + *src)
 	}
 
-	fe, err := frontend.Open(*fpath)
-	checkErr(err)
-	defer fe.Close()
+	pkt := new(ts.ArrayPkt)
 
-	switch *sys {
+	if *count == 0 {
+		for {
+			checkErr(r.ReadPkt(pkt))
+			_, err := os.Stdout.Write(pkt.Bytes())
+			checkErr(err)
+		}
+		return
+	}
+	for *count != 0 {
+		checkErr(r.ReadPkt(pkt))
+		_, err := os.Stdout.Write(pkt.Bytes())
+		checkErr(err)
+		*count--
+	}
+}
+
+type pidFilter struct {
+	r    ts.PktReader
+	pids []uint16
+}
+
+func (f *pidFilter) ReadPkt(pkt ts.Pkt) error {
+	for {
+		if err := f.r.ReadPkt(pkt); err != nil {
+			return err
+		}
+		pid := pkt.Pid()
+		// TODO: sort f.pids to use more effecitve search method.
+		for _, p := range f.pids {
+			if p == 8192 || p == pid {
+				return nil
+			}
+		}
+	}
+}
+
+func listenUDP(laddr string, pids []uint16) ts.PktReader {
+	la, err := net.ResolveUDPAddr("udp", laddr)
+	checkErr(err)
+	c, err := net.ListenUDP("udp", la)
+	checkErr(err)
+	return &pidFilter{
+		r:    ts.NewPktPktReader(c, make([]byte, 7*ts.PktLen)),
+		pids: pids,
+	}
+}
+
+func tune(fpath, dpath, sys, pol string, freqHz, bwHz uint64, sr uint, pids []uint16) ts.PktReader {
+	var polar rune
+	switch pol {
+	case "h", "v":
+		polar = rune((pol)[0])
+	default:
+		die("unknown polarization: " + pol)
+	}
+
+	fe, err := frontend.Open(fpath)
+	checkErr(err)
+
+	switch sys {
 	case "t":
 		checkErr(fe.SetDeliverySystem(dvb.SysDVBT))
 		checkErr(fe.SetModulation(dvb.QAMAuto))
-		checkErr(fe.SetFrequency(uint32(*freq) * 1e6))
+		checkErr(fe.SetFrequency(uint32(freqHz)))
 		checkErr(fe.SetInversion(dvb.InversionAuto))
-		//checkErr(fe.SetBandwidth(8e6))
+		if bwHz != 0 {
+			checkErr(fe.SetBandwidth(uint32(bwHz)))
+		}
 		checkErr(fe.SetCodeRateHP(dvb.FECAuto))
 		checkErr(fe.SetCodeRateLP(dvb.FECAuto))
 		checkErr(fe.SetTxMode(dvb.TxModeAuto))
 		checkErr(fe.SetGuard(dvb.GuardAuto))
 		checkErr(fe.SetHierarchy(dvb.HierarchyNone))
 	case "s", "s2":
-		if *sys == "s" {
+		if sys == "s" {
 			checkErr(fe.SetDeliverySystem(dvb.SysDVBS))
 			checkErr(fe.SetModulation(dvb.QPSK))
 		} else {
@@ -96,15 +164,15 @@ func main() {
 			checkErr(fe.SetRolloff(dvb.RolloffAuto))
 			checkErr(fe.SetPilot(dvb.PilotAuto))
 		}
-		checkErr(fe.SetSymbolRate(uint32(*sr)))
+		checkErr(fe.SetSymbolRate(uint32(sr)))
 		checkErr(fe.SetInnerFEC(dvb.FECAuto))
 		checkErr(fe.SetInversion(dvb.InversionAuto))
-		ifreq, tone, volt := frontend.SecParam(uint64(*freq)*1e6, polar)
+		ifreq, tone, volt := frontend.SecParam(freqHz, polar)
 		checkErr(fe.SetFrequency(ifreq))
 		checkErr(fe.SetTone(tone))
 		checkErr(fe.SetVoltage(volt))
 	case "ca", "cb", "cc":
-		switch *sys {
+		switch sys {
 		case "ca":
 			checkErr(fe.SetDeliverySystem(dvb.SysDVBCAnnexA))
 		case "cb":
@@ -113,12 +181,12 @@ func main() {
 			checkErr(fe.SetDeliverySystem(dvb.SysDVBCAnnexC))
 		}
 		checkErr(fe.SetModulation(dvb.QAMAuto))
-		checkErr(fe.SetFrequency(uint32(*freq) * 1e6))
+		checkErr(fe.SetFrequency(uint32(freqHz)))
 		checkErr(fe.SetInversion(dvb.InversionAuto))
-		checkErr(fe.SetSymbolRate(uint32(*sr)))
+		checkErr(fe.SetSymbolRate(uint32(sr)))
 		checkErr(fe.SetInnerFEC(dvb.FECAuto))
 	default:
-		die("unknown delivery system: " + *sys)
+		die("unknown delivery system: " + sys)
 	}
 
 	checkErr(fe.Tune())
@@ -130,32 +198,15 @@ func main() {
 		Out:  demux.OutTSDemuxTap,
 		Type: demux.Other,
 	}
-	f, err := demux.Device(*dpath).StreamFilter(&filterParam)
+	f, err := demux.Device(dpath).StreamFilter(&filterParam)
 	checkErr(err)
-	defer f.Close()
 	for _, pid := range pids[1:] {
 		checkErr(f.AddPid(pid))
 	}
 	checkErr(f.SetBufferLen(1024 * 188))
 	checkErr(f.Start())
 
-	r := ts.NewPktStreamReader(f)
-	pkt := new(ts.ArrayPkt)
-
-	if *count == 0 {
-		for {
-			checkErr(r.ReadPkt(pkt))
-			_, err = os.Stdout.Write(pkt.Bytes())
-			checkErr(err)
-		}
-		return
-	}
-	for *count != 0 {
-		checkErr(r.ReadPkt(pkt))
-		_, err = os.Stdout.Write(pkt.Bytes())
-		checkErr(err)
-		*count--
-	}
+	return ts.NewPktStreamReader(f)
 }
 
 func waitForTune(fe frontend.Device) error {
