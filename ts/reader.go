@@ -166,3 +166,68 @@ func (r *Reader) Read(buf []byte) (n int, err error) {
 	}
 	return
 }
+
+// PktPktReader wraps any io.Reader interface and returns PktReader and
+// PktReplacer implementation for read MPEG-TS packets from stream of packets.
+// Internally it doesn't allocate any memory so is friendly for real-time
+// applications (it doesn't cause GC to run).
+//
+// PktPktReader assumes that every call of io.Reader's Read method returns
+// one transport packet that fits in provided buffer and contains integer
+// number of MPEG-TS packets that are properly aligned to the begining of
+// transport packet.
+type PktPktReader struct {
+	r    io.Reader
+	buf  []byte
+	next int
+}
+
+// NewPktPktReader is equivalent to:
+//	p := new(PktPktReader); p.SetReader(r); p.SetBuffer(buf)
+func NewPktPktReader(r io.Reader, buf []byte) *PktPktReader {
+	p := new(PktPktReader)
+	p.SetReader(r)
+	p.SetBuffer(buf)
+	return p
+}
+
+// SetReader sets new io.Reader as stream source. Forces resynchronization.
+func (p *PktPktReader) SetReader(r io.Reader) {
+	p.r = r
+}
+
+// SetReader sets new io.Reader as stream source. Forces resynchronization.
+func (p *PktPktReader) SetBuffer(buf []byte) {
+	p.buf = buf[:0]
+}
+
+// ReadPkt reads one MPEG-TS packet
+func (p *PktPktReader) ReadPkt(pkt Pkt) error {
+	for {
+		for {
+			end := p.next + PktLen
+			if end > len(p.buf) {
+				break
+			}
+			newpkt := SlicePkt(p.buf[p.next:end])
+			p.next = end
+			if newpkt.SyncOK() {
+				pkt.Copy(newpkt)
+				return nil
+			} else {
+				return ErrSync
+			}
+		}
+		p.buf = p.buf[:cap(p.buf)]
+		n, err := p.r.Read(p.buf)
+		if err != nil {
+			// This isn't correct if n!=0 but simplifies implementation.
+			return err
+		}
+		if n == 0 {
+			return io.EOF
+		}
+		p.buf = p.buf[:n]
+		p.next = 0
+	}
+}
