@@ -6,11 +6,12 @@ import (
 )
 
 var (
-	ErrSectionLength  = dvb.TemporaryError("incorrect value of section_length field")
-	ErrSectionPointer = dvb.TemporaryError("incorrect pointer_field")
-	ErrSectionSpace   = dvb.TemporaryError("no free space for section decoding")
-	ErrSectionCRC     = dvb.TemporaryError("section has incorrect CRC")
-	ErrSectionData    = dvb.TemporaryError("too few data to decode section")
+	ErrSectionLength   = dvb.TemporaryError("incorrect value of section_length field")
+	ErrSectionPointer  = dvb.TemporaryError("incorrect pointer_field")
+	ErrSectionSpace    = dvb.TemporaryError("no free space for section decoding")
+	ErrSectionCRC      = dvb.TemporaryError("section has incorrect CRC")
+	ErrSectionReserved = dvb.TemporaryError("section has wrong value of header reserved bits")
+	ErrSectionData     = dvb.TemporaryError("too few data to decode section")
 )
 
 // SectionDecoder can decode section from stream of packets
@@ -18,13 +19,14 @@ type SectionDecoder struct {
 	r        ts.PktReplacer
 	pkt      *ts.ArrayPkt
 	buffered bool // Not processed data in pkt
-	checkCRC bool
+	check    bool
 }
 
 // NewSectionDecoder creates section decoder. You can use r == nil and
 // set source of packets lather using SetPktReplacer or SetPktReader method.
-func NewSectionDecoder(r ts.PktReplacer, checkCRC bool) *SectionDecoder {
-	return &SectionDecoder{r: r, pkt: new(ts.ArrayPkt), checkCRC: checkCRC}
+// If check is true decoder checks value of reserved header bits and CRC.
+func NewSectionDecoder(r ts.PktReplacer, check bool) *SectionDecoder {
+	return &SectionDecoder{r: r, pkt: new(ts.ArrayPkt), check: check}
 }
 
 // SetPktReplacer sets ts.PktReplacer that will be used as data source
@@ -116,13 +118,15 @@ func (d *SectionDecoder) ReadSection(s Section) error {
 	if d.buffered && !d.pkt.Flags().PayloadStart() {
 		d.buffered = false // d.pkt doesn't contain begining of next section.
 	}
-	if !d.checkCRC {
-		return nil
+	if d.check {
+		if s.Reserved() != 3 {
+			return ErrSectionReserved
+		}
+		if !s.CheckCRC() {
+			return ErrSectionCRC
+		}
 	}
-	if s.CheckCRC() {
-		return nil
-	}
-	return ErrSectionCRC
+	return nil
 }
 
 /*func (d *SectionDecoder) ReadSection(s Section) error {

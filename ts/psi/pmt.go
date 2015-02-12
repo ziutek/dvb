@@ -58,7 +58,7 @@ func (p PMT) Update(r SectionReader) error {
 	if err != nil {
 		return err
 	}
-	if s.TableId() != 2 || !s.GenericSyntax() || s.Number() != 0 ||
+	if s.TableId() != 2 || !s.GenericSyntax() || s.PrivateSyntax() || s.Number() != 0 ||
 		s.LastNumber() != 0 {
 		return ErrPMTSectionSyntax
 	}

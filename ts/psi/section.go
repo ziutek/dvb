@@ -34,7 +34,7 @@ func (s Section) SetTableIdExt(id uint16) {
 	encodeU16(s[3:5], id)
 }
 
-// SyntaxIndicator returns the value of section_syntax_indicator field
+// GenericSyntax returns the value of section_syntax_indicator field
 func (s Section) GenericSyntax() bool {
 	return s[1]&0x80 != 0
 }
@@ -60,6 +60,14 @@ func (s Section) SetPrivateSyntax(pi bool) {
 	} else {
 		s[1] &^= 0x40
 	}
+}
+
+func (s Section) Reserved() int {
+	return (int(s[1]) & 0x30) >> 4
+}
+
+func (s Section) SetReserved(r int) {
+	s[1] = s[1]&^0x30 | byte(r<<4)&0x30
 }
 
 // Len returns length of the whole section (section_length + 3) or -1 if

@@ -13,7 +13,7 @@ func init() {
 func TestCodec(t *testing.T) {
 	q := ts.NewPktQueue(1)
 	go source(t, q.WritePart())
-	d := psi.NewSectionDecoder(q.ReadPart())
+	d := psi.NewSectionDecoder(q.ReadPart(), true)
 	s := make(psi.Section, psi.ISOSectionMaxLen)
 
 	for {
@@ -31,6 +31,7 @@ func source(t *testing.T, q *ts.PktWriteQueue) {
 	for i := range s[:7-1-4] {
 		s[i] = byte(i)
 	}
+	s.SetReserved(3)
 	e := psi.NewSectionEncoder(q, 0x321)
 
 	for l := 7; l < psi.ISOSectionMaxLen; l++ {

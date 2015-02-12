@@ -4,7 +4,10 @@ import (
 	"github.com/ziutek/dvb"
 )
 
-var ErrTableSectionNumber = dvb.TemporaryError("incorrect section number")
+var (
+	ErrTableSectionNumber = dvb.TemporaryError("Table: incorrect section number")
+	ErrTableSyntax        = dvb.TemporaryError("Table: incorrect section syntax")
+)
 
 type Table struct {
 	ss         []Section
@@ -51,7 +54,7 @@ func (t *Table) TableIdExt() uint16 {
 }
 
 // Update reads next table from r.
-func (t *Table) Update(r SectionReader, tableId byte, current bool) error {
+func (t *Table) Update(r SectionReader, tableId byte, private, current bool) error {
 	var rd uint64
 	t.m = 0
 	m := 0
@@ -66,11 +69,11 @@ func (t *Table) Update(r SectionReader, tableId byte, current bool) error {
 		if err := r.ReadSection(s); err != nil {
 			return err
 		}
-		if !s.GenericSyntax() {
-			continue
-		}
 		if s.TableId() != tableId || s.Current() != current {
 			continue
+		}
+		if !s.GenericSyntax() || s.PrivateSyntax() != private {
+			return ErrTableSyntax
 		}
 		// Always update maxN because sometimes provider updates table content
 		// without update version. In this case we can block waiting for section

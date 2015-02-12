@@ -42,7 +42,7 @@ func (sdt *SDT) Update(r SectionReader, actualMux bool, current bool) error {
 	if actualMux {
 		tableId = 0x42
 	}
-	err := sdt.t().Update(r, tableId, current)
+	err := sdt.t().Update(r, tableId, true, current)
 	if err != nil {
 		return err
 	}

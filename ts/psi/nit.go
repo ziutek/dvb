@@ -42,7 +42,7 @@ func (nit *NIT) Update(r SectionReader, actualMux bool, current bool) error {
 	if actualMux {
 		tableId = 0x40
 	}
-	return nit.t().Update(r, tableId, current)
+	return nit.t().Update(r, tableId, true, current)
 }
 
 // Descriptors returns network descriptors list

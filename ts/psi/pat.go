@@ -26,9 +26,9 @@ func (pat *PAT) MuxId() uint16 {
 	return pat.t().TableIdExt()
 }
 
-// Update reads next PAT from r
+// Update reads next PAT from r.
 func (pat *PAT) Update(r SectionReader, current bool) error {
-	return pat.t().Update(r, 0, current)
+	return pat.t().Update(r, 0, false, current)
 }
 
 // ProgramList returns list of programs
