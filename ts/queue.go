@@ -21,8 +21,14 @@ func NewPktQueue(length int) *PktQueue {
 	return q
 }
 
+// Cap returns capacity of q.
+func (q *PktQueue) Cap() int {
+	return cap(q.filled)
+}
+
+// Len returns number of packet queued in q.
 func (q *PktQueue) Len() int {
-	return len(q.empty)
+	return len(q.filled)
 }
 
 // ReadPart returns read part of q that can be used only to read packets from
