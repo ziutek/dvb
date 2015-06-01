@@ -78,14 +78,14 @@ func main() {
 	sr *= 1e3
 
 	args = args[3:]
-	pids := make([]uint16, len(args))
+	pids := make([]int16, len(args))
 	for i, a := range args {
-		pid, err := strconv.ParseUint(a, 0, 64)
+		pid, err := strconv.ParseInt(a, 0, 64)
 		checkErr(err)
-		if pid > 8192 {
-			die("PID (" + a + ") > 8192")
+		if uint64(pid) > 8192 {
+			die(a + " isn't in valid PID range [0, 8192]")
 		}
-		pids[i] = uint16(pid)
+		pids[i] = int16(pid)
 	}
 
 	fe, err := frontend.Open(filepath.Join(*adapterPath, *frontendPath))
@@ -98,7 +98,7 @@ func main() {
 	checkErr(fe.SetSymbolRate(uint32(sr)))
 	checkErr(fe.SetInnerFEC(dvb.FECAuto))
 	checkErr(fe.SetInversion(dvb.InversionAuto))
-	ifreq, tone, volt := frontend.SecParam(freq, polar)
+	ifreq, tone, volt := frontend.SecParam(freq, rune(polar))
 	checkErr(fe.SetFrequency(ifreq))
 	checkErr(fe.SetTone(tone))
 	checkErr(fe.SetVoltage(volt))

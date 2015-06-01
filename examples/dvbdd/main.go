@@ -58,14 +58,14 @@ func main() {
 		usage()
 	}
 
-	pids := make([]uint16, flag.NArg())
+	pids := make([]int16, flag.NArg())
 	for i, a := range flag.Args() {
-		pid, err := strconv.ParseUint(a, 0, 16)
+		pid, err := strconv.ParseInt(a, 0, 64)
 		checkErr(err)
-		if pid > 8192 {
+		if uint64(pid) > 8192 {
 			die(a + " isn't in valid PID range [0, 8192]")
 		}
-		pids[i] = uint16(pid)
+		pids[i] = int16(pid)
 	}
 
 	var r ts.PktReader
@@ -99,7 +99,7 @@ func main() {
 
 type pidFilter struct {
 	r    ts.PktReader
-	pids []uint16
+	pids []int16
 }
 
 func (f *pidFilter) ReadPkt(pkt ts.Pkt) error {
@@ -117,7 +117,7 @@ func (f *pidFilter) ReadPkt(pkt ts.Pkt) error {
 	}
 }
 
-func listenUDP(laddr string, pids []uint16) ts.PktReader {
+func listenUDP(laddr string, pids []int16) ts.PktReader {
 	la, err := net.ResolveUDPAddr("udp", laddr)
 	checkErr(err)
 	c, err := net.ListenUDP("udp", la)
@@ -128,7 +128,7 @@ func listenUDP(laddr string, pids []uint16) ts.PktReader {
 	}
 }
 
-func tune(fpath, dpath, sys, pol string, freqHz, bwHz uint64, sr uint, pids []uint16) ts.PktReader {
+func tune(fpath, dpath, sys, pol string, freqHz, bwHz uint64, sr uint, pids []int16) ts.PktReader {
 	var polar rune
 	switch pol {
 	case "h", "v":

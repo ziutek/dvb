@@ -25,12 +25,12 @@ func (p *ArrayPkt) SetSync() {
 	p[0] = 0x47
 }
 
-func (p *ArrayPkt) Pid() uint16 {
-	return uint16(p[1]&0x1f)<<8 | uint16(p[2])
+func (p *ArrayPkt) Pid() int16 {
+	return int16(p[1]&0x1f)<<8 | int16(p[2])
 }
 
-func (p *ArrayPkt) SetPid(pid uint16) {
-	if pid > 8191 {
+func (p *ArrayPkt) SetPid(pid int16) {
+	if uint(pid) > 8191 {
 		panic("Bad PID")
 	}
 	p[1] = p[1]&0xe0 | byte(pid>>8)

@@ -118,7 +118,7 @@ const (
 )
 
 type StreamFilterParam struct {
-	Pid   uint16
+	Pid   int16
 	In    Input
 	Out   Output
 	Type  StreamType
@@ -130,7 +130,7 @@ type StreamFilter struct {
 	Filter
 }
 
-func (f StreamFilter) AddPid(pid uint16) error {
+func (f StreamFilter) AddPid(pid int16) error {
 	_, _, e := syscall.Syscall(
 		syscall.SYS_IOCTL,
 		uintptr(f.file.Fd()),
@@ -143,7 +143,7 @@ func (f StreamFilter) AddPid(pid uint16) error {
 	return nil
 }
 
-func (f StreamFilter) RemovePid(pid uint16) error {
+func (f StreamFilter) RemovePid(pid int16) error {
 	_, _, e := syscall.Syscall(
 		syscall.SYS_IOCTL,
 		uintptr(f.file.Fd()),
@@ -165,7 +165,7 @@ type Pattern struct {
 }
 
 type SectionFilterParam struct {
-	Pid     uint16
+	Pid     int16
 	Pattern Pattern
 	Timeout uint32
 	Flags   Flags

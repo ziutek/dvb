@@ -26,13 +26,13 @@ func main() {
 
 	pid, err := strconv.ParseUint(os.Args[1], 0, 64)
 	checkErr(err)
-	if pid > 8191 {
+	if uint64(pid) > 8191 {
 		log.Fatal(pid, "isn't valid PID")
 	}
 
 	s := make(psi.Section, psi.SectionMaxLen)
 	r := psi.NewSectionStreamReader(os.Stdin, pid != 20)
-	w := psi.NewSectionEncoder(ts.PktStreamWriter{os.Stdout}, uint16(pid))
+	w := psi.NewSectionEncoder(ts.PktStreamWriter{os.Stdout}, int16(pid))
 	for {
 		err := r.ReadSection(s)
 		if err != nil {

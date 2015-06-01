@@ -17,9 +17,9 @@ type Pkt interface {
 	// SetSync() sets right sync byte
 	SetSync()
 	// Pid return value of packet identifier
-	Pid() uint16
+	Pid() int16
 	// SetPid sets packet identifier
-	SetPid(uint16)
+	SetPid(int16)
 	// CC returns value of continuity counter
 	CC() byte
 	// SetCC sets the value of continuity counter to byte&0x0f

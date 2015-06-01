@@ -9,7 +9,7 @@ import (
 // space or Flush method is called.
 type SectionEncoder struct {
 	r      ts.PktReplacer
-	pid    uint16
+	pid    int16
 	cc     byte
 	flags  ts.PktFlags
 	pkt    *ts.ArrayPkt
@@ -26,7 +26,7 @@ func (e *SectionEncoder) setupPktHeader() {
 
 // NewSectionEncoder creates section encoder. You can use r == nil and
 // set it lather using SetPktReplacer or SetPktWriter method.
-func NewSectionEncoder(r ts.PktReplacer, pid uint16) *SectionEncoder {
+func NewSectionEncoder(r ts.PktReplacer, pid int16) *SectionEncoder {
 	e := &SectionEncoder{
 		r:   r,
 		pid: pid,
