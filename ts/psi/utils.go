@@ -5,6 +5,12 @@ import (
 	"time"
 )
 
+func checkPid(pid int16) {
+	if uint(pid) > 8191 {
+		panic("Bad PID")
+	}
+}
+
 func decodeU32(b []byte) uint32 {
 	if len(b) != 4 {
 		panic("decodeU32 with len(b) != 4")

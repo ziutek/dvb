@@ -30,6 +30,13 @@ func (p PMT) PidPCR() int16 {
 	return int16(decodeU16(Section(p).Data()[0:2]) & 0x1fff)
 }
 
+func (p PMT) SetPidPCR(pid int16) {
+	checkPid(pid)
+	d := Section(p).Data()
+	d[0] = d[0]&0xe0 | byte(pid>>8)
+	d[1] = byte(pid)
+}
+
 func (p PMT) progInfoLen() int {
 	return int(decodeU16(Section(p).Data()[2:4]) & 0x0fff)
 }
@@ -84,9 +91,7 @@ func (i ESInfo) Pid() int16 {
 }
 
 func (i ESInfo) SetPid(pid int16) {
-	if uint(pid) > 8191 {
-		panic("Bad PID")
-	}
+	checkPid(pid)
 	i[1] = i[1]&0xe0 | byte(pid>>8)
 	i[2] = byte(pid)
 }
