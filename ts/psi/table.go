@@ -38,7 +38,7 @@ func (t *Table) TableId() byte {
 	return t.ss[0].TableId()
 }
 
-func (t *Table) Version() byte {
+func (t *Table) Version() int8 {
 	t.check()
 	return t.ss[0].Version()
 }

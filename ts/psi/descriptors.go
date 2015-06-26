@@ -288,7 +288,7 @@ func (cas CAS) String() string {
 
 type CADescriptor struct {
 	Sys CAS
-	Pid uint16
+	Pid int16
 }
 
 func ParseCADescriptor(d Descriptor) (cad CADescriptor, ok bool) {
@@ -300,7 +300,7 @@ func ParseCADescriptor(d Descriptor) (cad CADescriptor, ok bool) {
 		return
 	}
 	cad.Sys = CAS(decodeU16(data[0:2]))
-	cad.Pid = decodeU16(data[2:4]) & 0x1fff
+	cad.Pid = int16(decodeU16(data[2:4]) & 0x1fff)
 	ok = true
 	return
 }

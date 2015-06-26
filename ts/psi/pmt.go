@@ -6,20 +6,28 @@ import (
 
 type PMT Section
 
-func (p PMT) Version() byte {
+func (p PMT) Version() int8 {
 	return Section(p).Version()
+}
+
+func (p PMT) SetVersion(v int8) {
+	Section(p).SetVersion(v)
 }
 
 func (p PMT) Current() bool {
 	return Section(p).Current()
 }
 
+func (p PMT) MakeCRC() {
+	Section(p).MakeCRC()
+}
+
 func (p PMT) ProgId() uint16 {
 	return Section(p).TableIdExt()
 }
 
-func (p PMT) PidPCR() uint16 {
-	return decodeU16(Section(p).Data()[0:2]) & 0x1fff
+func (p PMT) PidPCR() int16 {
+	return int16(decodeU16(Section(p).Data()[0:2]) & 0x1fff)
 }
 
 func (p PMT) progInfoLen() int {
@@ -39,7 +47,8 @@ var (
 	ErrPMTProgInfoLen   = dvb.TemporaryError("incorrect PMT program info length")
 )
 
-// AsPMT returns s as PMT or error if s isn't PMT section
+// AsPMT returns s as PMT or error if s isn't PMT section. This works because
+// PMT should fit in one section (other tables occupy multiple sections.
 func AsPMT(s Section) (PMT, error) {
 	if s.TableId() != 2 || !s.GenericSyntax() || s.Number() != 0 ||
 		s.LastNumber() != 0 {
@@ -52,20 +61,16 @@ func AsPMT(s Section) (PMT, error) {
 	return p, nil
 }
 
+// Update can be used like Table.Update. It reads one section into p and runs
+// AsPMT to check its syntax.
 func (p PMT) Update(r SectionReader) error {
 	s := Section(p)
 	err := r.ReadSection(s)
 	if err != nil {
 		return err
 	}
-	if s.TableId() != 2 || !s.GenericSyntax() || s.PrivateSyntax() || s.Number() != 0 ||
-		s.LastNumber() != 0 {
-		return ErrPMTSectionSyntax
-	}
-	if p.progInfoLen()+4 > len(s.Data()) {
-		return ErrPMTProgInfoLen
-	}
-	return nil
+	_, err = AsPMT(s)
+	return err
 }
 
 type ESInfo []byte
@@ -74,8 +79,16 @@ func (i ESInfo) Type() StreamType {
 	return StreamType(i[0])
 }
 
-func (i ESInfo) Pid() uint16 {
-	return decodeU16(i[1:3]) & 0x1fff
+func (i ESInfo) Pid() int16 {
+	return int16(decodeU16(i[1:3]) & 0x1fff)
+}
+
+func (i ESInfo) SetPid(pid int16) {
+	if uint(pid) > 8191 {
+		panic("Bad PID")
+	}
+	i[1] = i[1]&0xe0 | byte(pid>>8)
+	i[2] = byte(pid)
 }
 
 func (i ESInfo) esInfoLen() uint16 {

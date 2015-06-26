@@ -14,7 +14,7 @@ func (nit *NIT) t() *Table {
 	return (*Table)(nit)
 }
 
-func (nit *NIT) Version() byte {
+func (nit *NIT) Version() int8 {
 	return nit.t().Version()
 }
 

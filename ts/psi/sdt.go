@@ -14,14 +14,6 @@ func (sdt *SDT) t() *Table {
 	return (*Table)(sdt)
 }
 
-func (sdt *SDT) Version() byte {
-	return sdt.t().Version()
-}
-
-func (sdt *SDT) Current() bool {
-	return sdt.t().Current()
-}
-
 func (sdt *SDT) MuxId() uint16 {
 	return sdt.t().TableIdExt()
 }

@@ -92,21 +92,21 @@ func (s Section) SetLen(l int) {
 	s[2] = byte(l)
 }
 
-// Version returns the value of version_number field
-func (s Section) Version() byte {
+// Version returns the value of version_number field.
+func (s Section) Version() int8 {
 	if !s.GenericSyntax() {
 		panic("GenericSyntax need for Version")
 	}
-	return (s[5] >> 1) & 0x1f
+	return int8(s[5] >> 1) & 0x1f
 }
 
 // SetVersion sets the value of version_number field.
 // It panic if v > 31
-func (s Section) SetVerison(v byte) {
-	if v > 31 {
+func (s Section) SetVersion(v int8) {
+	if uint(v) > 31 {
 		panic("value for version_number field is too large")
 	}
-	s[5] = s[5]&0x3e | (v << 1)
+	s[5] = s[5]&0x3e | byte(v << 1)
 }
 
 // Current returns the value of current_next_indicator field
