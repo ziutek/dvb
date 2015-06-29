@@ -66,6 +66,7 @@ func (s Section) Reserved() int {
 	return (int(s[1]) & 0x30) >> 4
 }
 
+// SetReserved: r should be 3.
 func (s Section) SetReserved(r int) {
 	s[1] = s[1]&^0x30 | byte(r<<4)&0x30
 }

@@ -80,6 +80,10 @@ func (p PMT) Update(r SectionReader) error {
 	return err
 }
 
+func (p PMT) AsSection() Section {
+	return Section(p)
+}
+
 type ESInfo []byte
 
 func (i ESInfo) Type() StreamType {

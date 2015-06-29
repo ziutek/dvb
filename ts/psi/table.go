@@ -38,6 +38,13 @@ func (t *Table) TableId() byte {
 	return t.ss[0].TableId()
 }
 
+func (t *Table) SetTableId(id byte) {
+	t.check()
+	for _, s := range t.ss {
+		s.SetTableId(id)
+	}
+}
+
 func (t *Table) Version() int8 {
 	t.check()
 	return t.ss[0].Version()
