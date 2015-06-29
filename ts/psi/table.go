@@ -11,7 +11,6 @@ var (
 
 type Table struct {
 	ss         []Section
-	m          int
 	sectionLen int
 }
 
@@ -20,17 +19,17 @@ func NewTable(sectionLen int) *Table {
 }
 
 func (t *Table) Sections() []Section {
-	return t.ss[:t.m]
+	return t.ss
 }
 
 func (t *Table) check() {
-	if t.m == 0 {
+	if len(t.ss) == 0 {
 		panic("table doesn't contain valid data")
 	}
 }
 
 func (t *Table) Reset() {
-	t.m = 0
+	t.ss = t.ss[:0]
 }
 
 func (t *Table) TableId() byte {
@@ -63,11 +62,12 @@ func (t *Table) TableIdExt() uint16 {
 // Update reads next table from r.
 func (t *Table) Update(r SectionReader, tableId byte, private, current bool) error {
 	var rd uint64
-	t.m = 0
+	t.Reset()
 	m := 0
 	for {
 		var s Section
-		if m < len(t.ss) {
+		if m < cap(t.ss) {
+			t.ss = t.ss[:m+1]
 			s = t.ss[m]
 		} else {
 			s = make(Section, t.sectionLen)
@@ -117,10 +117,10 @@ func (t *Table) Update(r SectionReader, tableId byte, private, current bool) err
 		if s.Version() != t.Version() || s.TableIdExt() != t.TableIdExt() {
 			// Old table can never appear
 			rd, m = 0, 0
+			t.Reset()
 		}
 	}
 	// TODO: sort sections according to the s.Number()
-	t.m = m
 	return nil
 }
 
