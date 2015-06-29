@@ -68,19 +68,17 @@ func AsPMT(s Section) (PMT, error) {
 	return p, nil
 }
 
-// Update can be used like Table.Update. It reads one section into p and runs
-// AsPMT to check its syntax.
+// Update reads one section into p and runs AsPMT to check its syntax.
 func (p PMT) Update(r SectionReader) error {
-	s := Section(p)
-	err := r.ReadSection(s)
+	err := r.ReadSection(p.Section())
 	if err != nil {
 		return err
 	}
-	_, err = AsPMT(s)
+	_, err = AsPMT(p.Section())
 	return err
 }
 
-func (p PMT) AsSection() Section {
+func (p PMT) Section() Section {
 	return Section(p)
 }
 

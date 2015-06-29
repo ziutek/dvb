@@ -6,32 +6,23 @@ import (
 
 type NIT Table
 
-func NewNIT() *NIT {
-	return (*NIT)(NewTable(ISOSectionMaxLen))
+func (nit NIT) Version() int8 {
+	return Table(nit).Version()
 }
 
-func (nit *NIT) t() *Table {
-	return (*Table)(nit)
+func (nit NIT) Current() bool {
+	return Table(nit).Current()
 }
 
-func (nit *NIT) Version() int8 {
-	return nit.t().Version()
+func (nit NIT) NetId() uint16 {
+	return Table(nit).TableIdExt()
 }
 
-func (nit *NIT) Current() bool {
-	return nit.t().Current()
-}
-
-func (nit *NIT) NetId() uint16 {
-	return nit.t().TableIdExt()
-}
-
-func (nit *NIT) s() Section {
-	ss := nit.t().Sections()
-	if len(ss) == 0 {
+func (nit NIT) s() Section {
+	if len(nit) == 0 {
 		panic("NIT doesn't contain valid data")
 	}
-	return ss[0]
+	return nit[0]
 }
 
 var ErrNITSectionLen = dvb.TemporaryError("incorrect NIT section length")
@@ -42,16 +33,16 @@ func (nit *NIT) Update(r SectionReader, actualMux bool, current bool) error {
 	if actualMux {
 		tableId = 0x40
 	}
-	return nit.t().Update(r, tableId, true, current)
+	return (*Table)(nit).Update(r, tableId, true, current, ISOSectionMaxLen)
 }
 
 // Descriptors returns network descriptors list
-func (nit *NIT) Descriptors() TableDescriptors {
-	return nit.t().Descriptors(0)
+func (nit NIT) Descriptors() TableDescriptors {
+	return Table(nit).Descriptors(0)
 }
 
-func (nit *NIT) MuxInfo() MuxInfoList {
-	return MuxInfoList{ss: nit.t().Sections()}
+func (nit NIT) MuxInfo() MuxInfoList {
+	return MuxInfoList{nit: nit}
 }
 
 type MuxInfo []byte
@@ -69,12 +60,12 @@ func (i MuxInfo) Descriptors() DescriptorList {
 }
 
 type MuxInfoList struct {
-	ss   []Section
+	nit   NIT
 	data []byte
 }
 
 func (il MuxInfoList) IsEmpty() bool {
-	return len(il.ss) == 0 && len(il.data) == 0
+	return len(il.nit) == 0 && len(il.data) == 0
 }
 
 // Pop returns first multiplex information element in i and remaining
@@ -82,10 +73,10 @@ func (il MuxInfoList) IsEmpty() bool {
 // error occurs i == nil.
 func (il MuxInfoList) Pop() (i MuxInfo, ril MuxInfoList) {
 	if len(il.data) == 0 {
-		if len(il.ss) == 0 {
+		if len(il.nit) == 0 {
 			return
 		}
-		il.data = il.ss[0].Data()
+		il.data = il.nit[0].Data()
 		if len(il.data) < 2 {
 			return
 		}
@@ -102,7 +93,7 @@ func (il MuxInfoList) Pop() (i MuxInfo, ril MuxInfoList) {
 			return
 		}
 		il.data = il.data[2:l]
-		il.ss = il.ss[1:]
+		il.nit = il.nit[1:]
 	}
 	if len(il.data) < 6 {
 		return
@@ -112,7 +103,7 @@ func (il MuxInfoList) Pop() (i MuxInfo, ril MuxInfoList) {
 		return
 	}
 	i = MuxInfo(il.data[:l])
-	ril.ss = il.ss
+	ril.nit = il.nit
 	ril.data = il.data[l:]
 	return
 }

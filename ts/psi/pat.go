@@ -6,39 +6,31 @@ import (
 
 type PAT Table
 
-func NewPAT() *PAT {
-	return (*PAT)(NewTable(ISOSectionMaxLen))
+func (pat PAT) Version() int8 {
+	return Table(pat).Version()
 }
 
-func (pat *PAT) t() *Table {
-	return (*Table)(pat)
+func (pat PAT) Current() bool {
+	return Table(pat).Current()
 }
 
-func (pat *PAT) Version() int8 {
-	return pat.t().Version()
-}
-
-func (pat *PAT) Current() bool {
-	return pat.t().Current()
-}
-
-func (pat *PAT) MuxId() uint16 {
-	return pat.t().TableIdExt()
+func (pat PAT) MuxId() uint16 {
+	return Table(pat).TableIdExt()
 }
 
 // Update reads next PAT from r.
 func (pat *PAT) Update(r SectionReader, current bool) error {
-	return pat.t().Update(r, 0, false, current)
+	return (*Table)(pat).Update(r, 0, false, current, ISOSectionMaxLen)
 }
 
 // ProgramList returns list of programs
-func (pat *PAT) ProgramList() ProgramList {
-	return ProgramList{ss: pat.t().Sections()}
+func (pat PAT) ProgramList() ProgramList {
+	return ProgramList{ss: []Section(pat)}
 }
 
 // FindPMT returns PMT PID for given progid. If there is no such progId it
 // returns pid == ts.NullPid. If an error occurs FindPMT retuns -1
-func (pat *PAT) FindPMT(progid uint16) (pmtpid int16) {
+func (pat PAT) FindPMT(progid uint16) (pmtpid int16) {
 	pl := pat.ProgramList()
 	for !pl.IsEmpty() {
 		var id uint16
@@ -55,7 +47,7 @@ func (pat *PAT) FindPMT(progid uint16) (pmtpid int16) {
 
 // FindProgId returns first found program number that corresponds to pmtpid.
 // Returns ok == false if not found or error.
-func (pat *PAT) FindProgId(pmtpid int16) (progid uint16, ok bool) {
+func (pat PAT) FindProgId(pmtpid int16) (progid uint16, ok bool) {
 	pl := pat.ProgramList()
 	for !pl.IsEmpty() {
 		var pid int16

@@ -6,32 +6,16 @@ import (
 
 type SDT Table
 
-func NewSDT() *SDT {
-	return (*SDT)(NewTable(ISOSectionMaxLen))
+func (sdt SDT) Version() int8 {
+	return Table(sdt).Version()
 }
 
-func (sdt *SDT) t() *Table {
-	return (*Table)(sdt)
+func (sdt SDT) Current() bool {
+	return Table(sdt).Current()
 }
 
-func (sdt *SDT) Version() int8 {
-	return sdt.t().Version()
-}
-
-func (sdt *SDT) Current() bool {
-	return sdt.t().Current()
-}
-
-func (sdt *SDT) MuxId() uint16 {
-	return sdt.t().TableIdExt()
-}
-
-func (sdt *SDT) s() Section {
-	ss := sdt.t().Sections()
-	if len(ss) == 0 {
-		panic("SDT doesn't contain valid data")
-	}
-	return ss[0]
+func (sdt SDT) MuxId() uint16 {
+	return Table(sdt).TableIdExt()
 }
 
 var ErrSDTSectionLen = dvb.TemporaryError("incorrect SDT section length")
@@ -42,34 +26,37 @@ func (sdt *SDT) Update(r SectionReader, actualMux bool, current bool) error {
 	if actualMux {
 		tableId = 0x42
 	}
-	err := sdt.t().Update(r, tableId, true, current)
+	t := (*Table)(sdt)
+	err := t.Update(r, tableId, true, current, ISOSectionMaxLen)
 	if err != nil {
 		return err
 	}
-	if len(sdt.s().Data()) < 2 {
-		sdt.t().Reset()
-		return ErrSDTSectionLen
+	for _, s := range *t {
+		if len(s.Data()) < 2 {
+			t.Reset()
+			return ErrSDTSectionLen
+		}
 	}
 	return nil
 }
 
 // OrgNetId returns original_network_id
-func (sdt *SDT) OrgNetId() uint16 {
-	return decodeU16(sdt.s().Data()[0:2])
+func (sdt SDT) OrgNetId() uint16 {
+	return decodeU16(sdt[0].Data()[0:2])
 }
 
 // Info returns list of ifnormation about services (programs)
-func (sdt *SDT) ServiceInfo() ServiceInfoList {
-	return ServiceInfoList{ss: sdt.t().Sections()}
+func (sdt SDT) ServiceInfo() ServiceInfoList {
+	return ServiceInfoList{sdt: sdt}
 }
 
 type ServiceInfoList struct {
-	ss   []Section
+	sdt  SDT
 	data []byte
 }
 
 func (sl ServiceInfoList) IsEmpty() bool {
-	return len(sl.ss) == 0 && len(sl.data) == 0
+	return len(sl.sdt) == 0 && len(sl.data) == 0
 }
 
 // Pop returns first service information element from sl. Remaining elements
@@ -77,15 +64,15 @@ func (sl ServiceInfoList) IsEmpty() bool {
 // If an error occurs si == nil.
 func (sl ServiceInfoList) Pop() (si ServiceInfo, rsl ServiceInfoList) {
 	if len(sl.data) == 0 {
-		if len(sl.ss) == 0 {
+		if len(sl.sdt) == 0 {
 			return
 		}
-		sl.data = sl.ss[0].Data()
+		sl.data = sl.sdt[0].Data()
 		if len(sl.data) < 3 {
 			return
 		}
 		sl.data = sl.data[3:]
-		sl.ss = sl.ss[1:]
+		sl.sdt = sl.sdt[1:]
 	}
 	if len(sl.data) < 5 {
 		return
@@ -95,7 +82,7 @@ func (sl ServiceInfoList) Pop() (si ServiceInfo, rsl ServiceInfoList) {
 		return
 	}
 	si = sl.data[:l]
-	rsl.ss = sl.ss
+	rsl.sdt = sl.sdt
 	rsl.data = sl.data[l:]
 	return
 }
