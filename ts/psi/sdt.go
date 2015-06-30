@@ -47,22 +47,30 @@ func (sdt SDT) OrgNetId() uint16 {
 
 // Info returns list of ifnormation about services (programs)
 func (sdt SDT) ServiceInfo() ServiceInfoList {
-	return ServiceInfoList{sdt: sdt}
+	return ServiceInfoList{Table(sdt).Cursor(3)}
 }
 
 type ServiceInfoList struct {
-	sdt  SDT
-	data []byte
-}
-
-func (sl ServiceInfoList) IsEmpty() bool {
-	return len(sl.sdt) == 0 && len(sl.data) == 0
+	TableCursor
 }
 
 // Pop returns first service information element from sl. Remaining elements
 // are returned in rsl. If there is no more informations to read rsl is empty.
 // If an error occurs si == nil.
-func (sl ServiceInfoList) Pop() (si ServiceInfo, rsl ServiceInfoList) {
+func (sl ServiceInfoList) Pop() (ServiceInfo, ServiceInfoList) {
+	data, _ := sl.TableCursor.Pop(5)
+	if len(data) != 5 {
+		return nil, sl
+	}
+	silen := int(decodeU16(data[3:5])&0x0fff) + 5
+	data, tab := sl.TableCursor.Pop(silen)
+	if len(data) < silen {
+		data = nil
+	}
+	return data, ServiceInfoList{tab}
+}
+
+/*func (sl ServiceInfoList) Pop() (si ServiceInfo, rsl ServiceInfoList) {
 	if len(sl.data) == 0 {
 		if len(sl.sdt) == 0 {
 			return
@@ -85,7 +93,7 @@ func (sl ServiceInfoList) Pop() (si ServiceInfo, rsl ServiceInfoList) {
 	rsl.sdt = sl.sdt
 	rsl.data = sl.data[l:]
 	return
-}
+}*/
 
 type ServiceStatus byte
 

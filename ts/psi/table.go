@@ -113,6 +113,10 @@ func (t *Table) Update(r SectionReader, tableId byte, private, current bool, sec
 	return nil
 }
 
+func (t Table) Cursor(headLen int) TableCursor {
+	return TableCursor{tab: t, offset: headLen}
+}
+
 type TableDescriptors struct {
 	tab    Table
 	dl     DescriptorList
@@ -149,4 +153,42 @@ func (td TableDescriptors) Pop() (d Descriptor, rtd TableDescriptors) {
 	d, td.dl = td.dl.Pop()
 	rtd = td
 	return
+}
+
+type TableCursor struct {
+	tab    Table
+	data   []byte
+	offset int
+}
+
+func (tc TableCursor) IsEmpty() bool {
+	return len(tc.data) == 0 && len(tc.tab) == 0
+}
+
+// Pop returns at least next n bytes from table. It returns empty TableCursor
+// if there is no more bytes to return. Pop can return less bytes than
+// requested if there isn't enough bytes in current processed section - this
+// indicates an error if Pop is used to obtain compete records of data from
+// table (records can't cross sections boundaries).
+func (tc TableCursor) Pop(n int) ([]byte, TableCursor) {
+	if n == 0 {
+		return nil, tc
+	}
+	if len(tc.data) == 0 {
+		if len(tc.tab) == 0 {
+			return nil, TableCursor{}
+		}
+		data := tc.tab[0].Data()
+		tc.tab = tc.tab[1:]
+		if len(data) < tc.offset {
+			return nil, tc
+		}
+		tc.data = data[tc.offset:]
+	}
+	if len(tc.data) < n {
+		n = len(tc.data)
+	}
+	data := tc.data[:n]
+	tc.data = tc.data[n:]
+	return data, tc
 }
