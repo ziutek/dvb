@@ -42,7 +42,7 @@ func (nit NIT) Descriptors() TableDescriptors {
 }
 
 func (nit NIT) MuxInfo() MuxInfoList {
-	return MuxInfoList{nit: nit}
+	return MuxInfoList{Table(nit).Cursor()}
 }
 
 type MuxInfo []byte
@@ -60,18 +60,50 @@ func (i MuxInfo) Descriptors() DescriptorList {
 }
 
 type MuxInfoList struct {
-	nit   NIT
-	data []byte
+	TableCursor
 }
 
-func (il MuxInfoList) IsEmpty() bool {
-	return len(il.nit) == 0 && len(il.data) == 0
+// Pop returns first MuxInfo element from il. If there is no more data to read
+// Pop returns empty ServiceInfoList. If an error occurs it returns nil MuxInfo
+// and non-empty MuxInfoList.
+func (il MuxInfoList) Pop() (MuxInfo, MuxInfoList) {
+	if len(il.Data) == 0 {
+		if len(il.Tab) == 0 {
+			return nil, il
+		}
+		il.TableCursor = il.NextSection()
+		// Skip network descriptors
+		if len(il.Data) < 2 {
+			return nil, il
+		}
+		n := int(decodeU16(il.Data[0:2])&0x0fff) + 2
+		if len(il.Data) < n {
+			return nil, il
+		}
+		il.Data = il.Data[n:]
+		// Decode transport_stream_loop_length
+		if len(il.Data) < 2 {
+			return nil, il
+		}
+		n = int(decodeU16(il.Data[0:2])&0x0fff) + 2
+		if len(il.Data) < n {
+			return nil, il
+		}
+		il.Data = il.Data[2:n]
+	}
+	if len(il.Data) < 6 {
+		return nil, il
+	}
+	n := int(decodeU16(il.Data[4:6])&0x0fff) + 6
+	if len(il.Data) < n {
+		return nil, il
+	}
+	data := il.Data[:n]
+	il.Data = il.Data[n:]
+	return data, il
 }
 
-// Pop returns first multiplex information element in i and remaining
-// elements in ril.  If there is no more elements then len(ril) == 0. If an
-// error occurs i == nil.
-func (il MuxInfoList) Pop() (i MuxInfo, ril MuxInfoList) {
+/*func (il MuxInfoList) Pop() (i MuxInfo, ril MuxInfoList) {
 	if len(il.data) == 0 {
 		if len(il.nit) == 0 {
 			return
@@ -106,4 +138,4 @@ func (il MuxInfoList) Pop() (i MuxInfo, ril MuxInfoList) {
 	ril.nit = il.nit
 	ril.data = il.data[l:]
 	return
-}
+}*/

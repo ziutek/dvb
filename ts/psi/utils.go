@@ -12,31 +12,18 @@ func checkPid(pid int16) {
 }
 
 func decodeU32(b []byte) uint32 {
-	if len(b) != 4 {
-		panic("decodeU32 with len(b) != 4")
-	}
-	return uint32(b[0])<<24 | uint32(b[1])<<16 | uint32(b[2])<<8 |
-		uint32(b[3])
+	return uint32(b[0])<<24 | uint32(b[1])<<16 | uint32(b[2])<<8 | uint32(b[3])
 }
 
 func decodeU24(b []byte) uint32 {
-	if len(b) != 3 {
-		panic("decodeU24 with len(b) != 3")
-	}
 	return uint32(b[0])<<16 | uint32(b[1])<<8 | uint32(b[2])
 }
 
 func decodeU16(b []byte) uint16 {
-	if len(b) != 2 {
-		panic("decodeU16 with len(b) != 2")
-	}
 	return uint16(b[0])<<8 | uint16(b[1])
 }
 
 func encodeU32(b []byte, v uint32) {
-	if len(b) != 4 {
-		panic("encodeU32 with len(b) != 4")
-	}
 	b[0] = byte(v >> 24)
 	b[1] = byte(v >> 16)
 	b[2] = byte(v >> 8)
@@ -44,9 +31,6 @@ func encodeU32(b []byte, v uint32) {
 }
 
 func encodeU16(b []byte, v uint16) {
-	if len(b) != 2 {
-		panic("encodeU16 with len(b) != 2")
-	}
 	b[0] = byte(v >> 8)
 	b[1] = byte(v)
 }

@@ -47,53 +47,39 @@ func (sdt SDT) OrgNetId() uint16 {
 
 // Info returns list of ifnormation about services (programs)
 func (sdt SDT) ServiceInfo() ServiceInfoList {
-	return ServiceInfoList{Table(sdt).Cursor(3)}
+	return ServiceInfoList{Table(sdt).Cursor()}
 }
 
 type ServiceInfoList struct {
 	TableCursor
 }
 
-// Pop returns first service information element from sl. Remaining elements
-// are returned in rsl. If there is no more informations to read rsl is empty.
-// If an error occurs si == nil.
+// Pop returns first ServiceInfo element from sl. If there is no more data to
+// read Pop returns empty ServiceInfoList. If an error occurs it returns nil
+// ServiceInfo.
 func (sl ServiceInfoList) Pop() (ServiceInfo, ServiceInfoList) {
-	data, _ := sl.TableCursor.Pop(5)
-	if len(data) != 5 {
+	if len(sl.Data) == 0 {
+		if len(sl.Tab) == 0 {
+			return nil, sl
+		}
+		sl.TableCursor = sl.NextSection()
+		// Skip original_network_id.
+		if len(sl.Data) < 3 {
+			return nil, sl
+		}
+		sl.Data = sl.Data[3:]
+	}
+	if len(sl.Data) < 5 {
 		return nil, sl
 	}
-	silen := int(decodeU16(data[3:5])&0x0fff) + 5
-	data, tab := sl.TableCursor.Pop(silen)
-	if len(data) < silen {
-		data = nil
+	n := int(decodeU16(sl.Data[2:5])&0x0fff)+5
+	if len(sl.Data) < n {
+		return nil, sl
 	}
-	return data, ServiceInfoList{tab}
+	data := sl.Data[:n]
+	sl.Data = sl.Data[n:]
+	return data, sl
 }
-
-/*func (sl ServiceInfoList) Pop() (si ServiceInfo, rsl ServiceInfoList) {
-	if len(sl.data) == 0 {
-		if len(sl.sdt) == 0 {
-			return
-		}
-		sl.data = sl.sdt[0].Data()
-		if len(sl.data) < 3 {
-			return
-		}
-		sl.data = sl.data[3:]
-		sl.sdt = sl.sdt[1:]
-	}
-	if len(sl.data) < 5 {
-		return
-	}
-	l := int(decodeU16(sl.data[3:5])&0x0fff) + 5
-	if len(sl.data) < l {
-		return
-	}
-	si = sl.data[:l]
-	rsl.sdt = sl.sdt
-	rsl.data = sl.data[l:]
-	return
-}*/
 
 type ServiceStatus byte
 

@@ -153,10 +153,10 @@ func (s Section) SetLastNumber(n byte) {
 	s[7] = n
 }
 
-// Data rturns data part of section
+// Data rturns data part of section. It returns nil if !s.GenericSyntax().
 func (s Section) Data() []byte {
 	if !s.GenericSyntax() {
-		panic("GenericSyntax need for Data")
+		return nil
 	}
 	end := s.Len() - 4
 	if end == -1-4 || end > len(s) {
@@ -165,7 +165,7 @@ func (s Section) Data() []byte {
 	return s[8:end]
 }
 
-// CheckCRC returns true if s.Length() is valid and CRC32 of whole
+// CheckCRC returns true if s.Len() is valid and CRC32 of whole
 // section is correct
 func (s Section) CheckCRC() bool {
 	l := s.Len()
