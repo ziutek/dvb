@@ -72,7 +72,7 @@ func (sl ServiceInfoList) Pop() (ServiceInfo, ServiceInfoList) {
 	if len(sl.Data) < 5 {
 		return nil, sl
 	}
-	n := int(decodeU16(sl.Data[2:5])&0x0fff)+5
+	n := int(decodeU16(sl.Data[3:5])&0x0fff)+5
 	if len(sl.Data) < n {
 		return nil, sl
 	}
