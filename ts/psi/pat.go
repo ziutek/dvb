@@ -25,7 +25,7 @@ func (pat *PAT) Update(r SectionReader, current bool) error {
 
 // ProgramList returns list of programs
 func (pat PAT) ProgramList() ProgramList {
-	return ProgramList{ss: []Section(pat)}
+	return ProgramList{Table(pat).Cursor()}
 }
 
 // FindPMT returns PMT PID for given progid. If there is no such progId it
@@ -64,18 +64,30 @@ func (pat PAT) FindProgId(pmtpid int16) (progid uint16, ok bool) {
 }
 
 type ProgramList struct {
-	ss   []Section
-	data []byte
-}
-
-func (pl ProgramList) IsEmpty() bool {
-	return len(pl.ss) == 0 && len(pl.data) == 0
+	TableCursor
 }
 
 // Pop returns first (progId, pid) pair from pl. Remaining pairs are returned
-// in rpl. If there is no more programs to read rpl is empty.
-// If an error occurs pmtpid == -1
+// in rpl. If there is no more programs to read rpl is empty. If an error
+// occurs pmtpid == -1
 func (pl ProgramList) Pop() (progId uint16, pmtpid int16, rpl ProgramList) {
+	if len(pl.Data) == 0 {
+		if len(pl.Tab) == 0 {
+			return 0, -1, pl
+		}
+		pl.TableCursor = pl.NextSection()
+	}
+	if len(pl.Data) < 4 {
+		return 0, -1, pl
+	}
+	progId = decodeU16(pl.Data[0:2])
+	pmtpid = int16(decodeU16(pl.Data[2:4]) & 0x1fff)
+	rpl.Tab = pl.Tab
+	rpl.Data = pl.Data[4:]
+	return
+}
+
+/*func (pl ProgramList) Pop() (progId uint16, pmtpid int16, rpl ProgramList) {
 	if len(pl.data) == 0 {
 		if len(pl.ss) == 0 {
 			return
@@ -92,4 +104,4 @@ func (pl ProgramList) Pop() (progId uint16, pmtpid int16, rpl ProgramList) {
 	rpl.ss = pl.ss
 	rpl.data = pl.data[4:]
 	return
-}
+}*/
