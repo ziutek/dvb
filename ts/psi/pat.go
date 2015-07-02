@@ -87,21 +87,39 @@ func (pl ProgramList) Pop() (progId uint16, pmtpid int16, rpl ProgramList) {
 	return
 }
 
-/*func (pl ProgramList) Pop() (progId uint16, pmtpid int16, rpl ProgramList) {
-	if len(pl.data) == 0 {
-		if len(pl.ss) == 0 {
-			return
+func (pat *PAT) SetEmpty() {
+	*pat = (*pat)[:0]
+}
+
+// Append appends next program to PAT. After Append pat is in invalid state.
+// Use Close to recalculate all section numbers and CRCs.
+func (pat *PAT) Append(progId uint16, pmtpid int16) {
+	checkPid(pmtpid)
+	var (
+		sec  Section
+		data []byte
+	)
+	n := len(*pat)
+	if n > 0 {
+		sec = (*pat)[n-1]
+		data = sec.Alloc(4)
+	}
+	if sec == nil || data == nil {
+		if n < cap(*pat) {
+			*pat = (*pat)[:n+1]
+			sec = (*pat)[n]
+			sec.SetEmpty()
+		} else {
+			sec = MakeEmptySection(ISOSectionMaxLen, true)
+			// sec.SetPrivateSyntax(false)
+			*pat = append(*pat, sec)
 		}
-		pl.data = pl.ss[0].Data()
-		pl.ss = pl.ss[1:]
+		data = sec.Alloc(4)
 	}
-	if len(pl.data) < 4 {
-		pmtpid = -1
-		return
-	}
-	progId = decodeU16(pl.data[0:2])
-	pmtpid = int16(decodeU16(pl.data[2:4]) & 0x1fff)
-	rpl.ss = pl.ss
-	rpl.data = pl.data[4:]
-	return
-}*/
+	encodeU16(data[0:2], progId)
+	encodeU16(data[2:4], uint16(pmtpid)|0xe000)
+}
+
+func (pat *PAT) Close(muxid uint16, current bool, version int8) {
+	(*Table)(pat).Close(0, muxid, current, version)
+}

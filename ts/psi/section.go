@@ -66,10 +66,12 @@ func (s Section) Reserved() int {
 	return (int(s[1]) & 0x30) >> 4
 }
 
+/*
 // SetReserved: r should be 3.
 func (s Section) SetReserved(r int) {
 	s[1] = s[1]&^0x30 | byte(r<<4)&0x30
 }
+*/
 
 // Len returns length of the whole section (section_length + 3) or -1 if
 // section_length filed contains incorrect value
@@ -81,16 +83,17 @@ func (s Section) Len() int {
 	return l
 }
 
-// SetLen sets the value of section_length field to l-3.
-// It panics if l < 7 or l > SectionMaxLen
-func (s Section) SetLen(l int) {
-	if l < 4+3 || l > SectionMaxLen {
-		panic("incorrect value for section_length field")
+func (s Section) Cap() int {
+	return len(s)
+}
+
+func (s Section) setLen(n int) {
+	if n > len(s) {
+		panic("psi: too big value for section length")
 	}
-	l -= 3
-	h := byte(l>>8) & 0x0f
-	s[1] = s[1]&0xf0 | h
-	s[2] = byte(l)
+	n -= 3
+	s[1] = s[1]&0xf0 | byte(n>>8)&0x0f
+	s[2] = byte(n)
 }
 
 // Version returns the value of version_number field.
@@ -98,7 +101,7 @@ func (s Section) Version() int8 {
 	if !s.GenericSyntax() {
 		panic("GenericSyntax need for Version")
 	}
-	return int8(s[5] >> 1) & 0x1f
+	return int8(s[5]>>1) & 0x1f
 }
 
 // SetVersion sets the value of version_number field.
@@ -107,7 +110,7 @@ func (s Section) SetVersion(v int8) {
 	if uint(v) > 31 {
 		panic("value for version_number field is too large")
 	}
-	s[5] = s[5]&0x3e | byte(v << 1)
+	s[5] = s[5]&0xc1 | byte(v<<1)
 }
 
 // Current returns the value of current_next_indicator field
@@ -155,14 +158,14 @@ func (s Section) SetLastNumber(n byte) {
 
 // Data rturns data part of section. It returns nil if !s.GenericSyntax().
 func (s Section) Data() []byte {
-	if !s.GenericSyntax() {
-		return nil
-	}
 	end := s.Len() - 4
 	if end == -1-4 || end > len(s) {
 		panic("there is no enough data or section_length has incorrect value")
 	}
-	return s[8:end]
+	if s.GenericSyntax() {
+		return s[8:end]
+	}
+	return s[3:end]
 }
 
 // CheckCRC returns true if s.Len() is valid and CRC32 of whole
@@ -198,4 +201,38 @@ func (s Section) String() string {
 // SectionWriter is an interface wraps the WriteSection method.
 type SectionWriter interface {
 	WriteSection(s Section) error
+}
+
+func MakeEmptySection(maxLen int, genericSyntax bool) Section {
+	s := make(Section, maxLen)
+	s[1] = 0x30 // Reseved bits.
+	s.SetGenericSyntax(genericSyntax)
+	s.SetEmpty()
+	return s
+}
+
+// Alloc allocates n bytes in section. It returns nil if there is no room for
+// requested size. Alloc invalidates CRC sum. Use MakeCRC to recalculate it.
+func (s Section) Alloc(n int) []byte {
+	b := s.Len() - 4
+	e := b + n
+	if e+4 > s.Cap() {
+		return nil
+	}
+	s.setLen(e + 4)
+	return s[b:e]
+}
+
+// Set empty initializes section lenght, so s becomes empty. After SetEmpty
+// SetEmpty invalidates CRC sum. Use MakeCRC to recalculate it.
+func (s Section) SetEmpty() {
+	n := 3
+	if s.GenericSyntax() {
+		// table_id_extension + reserved + version_number +
+		// current_next_indicator + section_number + last_section_number = 5 B
+		// CRC = 4 B
+		s[5] = 0xc0 // Reserved bits.
+		n += 5 + 4
+	}
+	s.setLen(n)
 }

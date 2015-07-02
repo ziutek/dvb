@@ -26,6 +26,10 @@ func (p PMT) ProgId() uint16 {
 	return Section(p).TableIdExt()
 }
 
+func (p PMT) SetProgId(sid uint16) {
+	Section(p).SetTableIdExt(sid)
+}
+
 func (p PMT) PidPCR() int16 {
 	return int16(decodeU16(Section(p).Data()[0:2]) & 0x1fff)
 }

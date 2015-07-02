@@ -113,9 +113,29 @@ func (t *Table) Update(r SectionReader, tableId byte, private, current bool, sec
 	return nil
 }
 
+// Close recalculates section numbers and makes CRC sums for all sections.
+func (t Table) Close(tableId byte, tableIdExt uint16, current bool, version int8) {
+	lastnum := byte(len(t) - 1)
+	for num, s := range t {
+		s.SetTableId(tableId)
+		s.SetTableIdExt(tableIdExt)
+		s.SetCurrent(current)
+		s.SetVersion(version)
+		s.SetNumber(byte(num))
+		s.SetLastNumber(lastnum)
+		s.MakeCRC()
+	}
+}
+
 // Cursor returns TableCursor that can be used to obtain data from table.
 func (t Table) Cursor() TableCursor {
 	return TableCursor{Tab: t}
+}
+
+// Descriptors handles table global descriptors (if exists). offset is an
+// offest from begining of section data part to descriptor length word.
+func (t Table) Descriptors(offset int) TableDescriptors {
+	return TableDescriptors{tab: t, offset: offset}
 }
 
 type TableDescriptors struct {
@@ -126,12 +146,6 @@ type TableDescriptors struct {
 
 func (td TableDescriptors) IsEmpty() bool {
 	return len(td.tab) == 0 && len(td.dl) == 0
-}
-
-// Descriptors handles table global descriptors (if exists). offset is an
-// offest from begining of section data part to descriptor length word.
-func (t Table) Descriptors(offset int) TableDescriptors {
-	return TableDescriptors{tab: t, offset: offset}
 }
 
 func (td TableDescriptors) Pop() (d Descriptor, rtd TableDescriptors) {
