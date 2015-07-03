@@ -72,7 +72,7 @@ func (sl ServiceInfoList) Pop() (ServiceInfo, ServiceInfoList) {
 	if len(sl.Data) < 5 {
 		return nil, sl
 	}
-	n := int(decodeU16(sl.Data[3:5])&0x0fff)+5
+	n := int(decodeU16(sl.Data[3:5])&0x0fff) + 5
 	if len(sl.Data) < n {
 		return nil, sl
 	}
@@ -113,9 +113,21 @@ func (si ServiceInfo) ServiceId() uint16 {
 	return decodeU16(si[0:2])
 }
 
+func (si ServiceInfo) SetServiceId(sid uint16) {
+	encodeU16(si[0:2], sid)
+}
+
 // EITSchedule returns the value of EIT_schedule_flag field.
 func (si ServiceInfo) EITSchedule() bool {
 	return si[2]&0x02 != 0
+}
+
+func (si ServiceInfo) SetEITSchedule(b bool) {
+	if b {
+		si[2] |= 0x02
+	} else {
+		si[2] &^= 0x02
+	}
 }
 
 // EITPresentFollowing returns the value of EIT_present_following_flag field.
@@ -133,7 +145,64 @@ func (si ServiceInfo) Scrambled() bool {
 	return si[3]&0x10 != 0
 }
 
+func (si ServiceInfo) descrLoopLen() int {
+	return int(decodeU16(si[3:5]) & 0x0fff)
+}
+
+func (si ServiceInfo) setDescrLoopLen(n int) {
+	if uint(n) > 0xfff {
+		panic("psi: Bad descriptors loop length to set")
+	}
+	si[3] = si[3]&0xf0 | byte(n>>8)
+	si[4] = byte(n)
+}
+
 func (si ServiceInfo) Descriptors() DescriptorList {
-	l := int(decodeU16(si[3:5]) & 0x0fff)
-	return DescriptorList(si[5 : 5+l])
+	return DescriptorList(si[5 : 5+si.descrLoopLen()])
+}
+
+func MakeServiceInfo() ServiceInfo {
+	si := make(ServiceInfo, 5)
+	si[2] = 0xfc
+	return si
+}
+
+// ClearDescriptors clears descriptors_loop_length field.
+func (si ServiceInfo) ClearDescriptors() {
+	si.setDescrLoopLen(0)
+}
+
+func (si ServiceInfo) AppendDescriptors(ds ...Descriptor) {
+	n := si.descrLoopLen()
+	for _, d := range ds {
+		si = append(si[:5+n], d...)
+		n += len(d)
+	}
+	si.setDescrLoopLen(n)
+}
+
+func (si ServiceInfo) setDescriptorsLoopLength(n int) {
+	if uint(n) > 0xfff {
+		panic("psi: Bad descriptors loop length to set")
+	}
+	si[3] = si[3]&0xf0 | byte(n>>8)
+	si[4] = byte(n)
+}
+
+func (sdt *SDT) SetEmpty() {
+	(*Table)(sdt).SetEmpty()
+}
+
+func (sdt *SDT) Append(si ServiceInfo) {
+	data := TableAllocator{
+		Tab:           (*Table)(sdt),
+		SectionMaxLen: ISOSectionMaxLen,
+		GenericSyntax: true,
+		PrivateSyntax: true,
+	}.Alloc(len(si))
+	copy(data, si)
+}
+
+func (sdt *SDT) Close(tsid uint16, current bool, version int8) {
+	(*Table)(sdt).Close(17, tsid, current, version)
 }

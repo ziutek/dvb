@@ -103,33 +103,6 @@ func (pat *PAT) Append(progId uint16, pmtpid int16) {
 	encodeU16(data[2:4], uint16(pmtpid)|0xe000)
 }
 
-/*func (pat *PAT) Append(progId uint16, pmtpid int16) {
-	checkPid(pmtpid)
-	var (
-		sec  Section
-		data []byte
-	)
-	n := len(*pat)
-	if n > 0 {
-		sec = (*pat)[n-1]
-		data = sec.Alloc(4)
-	}
-	if sec == nil || data == nil {
-		if n < cap(*pat) {
-			*pat = (*pat)[:n+1]
-			sec = (*pat)[n]
-			sec.SetEmpty()
-		} else {
-			sec = MakeEmptySection(ISOSectionMaxLen, true)
-			// sec.SetPrivateSyntax(false)
-			*pat = append(*pat, sec)
-		}
-		data = sec.Alloc(4)
-	}
-	encodeU16(data[0:2], progId)
-	encodeU16(data[2:4], uint16(pmtpid)|0xe000)
-}*/
-
-func (pat *PAT) Close(muxid uint16, current bool, version int8) {
-	(*Table)(pat).Close(0, muxid, current, version)
+func (pat *PAT) Close(tsid uint16, current bool, version int8) {
+	(*Table)(pat).Close(0, tsid, current, version)
 }
