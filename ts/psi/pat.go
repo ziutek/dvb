@@ -88,12 +88,22 @@ func (pl ProgramList) Pop() (progId uint16, pmtpid int16, rpl ProgramList) {
 }
 
 func (pat *PAT) SetEmpty() {
-	*pat = (*pat)[:0]
+	(*Table)(pat).SetEmpty()
 }
 
 // Append appends next program to PAT. After Append pat is in invalid state.
 // Use Close to recalculate all section numbers and CRCs.
 func (pat *PAT) Append(progId uint16, pmtpid int16) {
+	data := TableAllocator{
+		Tab:           (*Table)(pat),
+		SectionMaxLen: ISOSectionMaxLen,
+		GenericSyntax: true,
+	}.Alloc(4)
+	encodeU16(data[0:2], progId)
+	encodeU16(data[2:4], uint16(pmtpid)|0xe000)
+}
+
+/*func (pat *PAT) Append(progId uint16, pmtpid int16) {
 	checkPid(pmtpid)
 	var (
 		sec  Section
@@ -118,7 +128,7 @@ func (pat *PAT) Append(progId uint16, pmtpid int16) {
 	}
 	encodeU16(data[0:2], progId)
 	encodeU16(data[2:4], uint16(pmtpid)|0xe000)
-}
+}*/
 
 func (pat *PAT) Close(muxid uint16, current bool, version int8) {
 	(*Table)(pat).Close(0, muxid, current, version)

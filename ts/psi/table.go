@@ -184,3 +184,40 @@ func (tc TableCursor) NextSection() TableCursor {
 	tc.Tab = tc.Tab[1:]
 	return tc
 }
+
+func (t *Table) SetEmpty() {
+	*t = (*t)[:0]
+}
+
+type TableAllocator struct {
+	Tab           *Table
+	SectionMaxLen int
+	GenericSyntax bool
+	PrivateSyntax bool
+}
+
+func (ta TableAllocator) Alloc(n int) []byte {
+	var (
+		sec  Section
+		data []byte
+	)
+	t := ta.Tab
+	m := len(*t)
+	if m > 0 {
+		sec = (*t)[m-1]
+		data = sec.Alloc(n)
+	}
+	if sec == nil || data == nil {
+		if m < cap(*t) {
+			*t = (*t)[:m+1]
+			sec = (*t)[m]
+			sec.SetEmpty()
+		} else {
+			sec = MakeEmptySection(ta.SectionMaxLen, ta.GenericSyntax)
+			sec.SetPrivateSyntax(ta.PrivateSyntax)
+			*t = append(*t, sec)
+		}
+		data = sec.Alloc(n)
+	}
+	return data
+}
