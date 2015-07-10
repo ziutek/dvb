@@ -10,7 +10,7 @@ import (
 type SectionEncoder struct {
 	r      ts.PktReplacer
 	pid    int16
-	cc     byte
+	cc     int8
 	flags  ts.PktFlags
 	pkt    *ts.ArrayPkt
 	offset int // offset in pkt.Payload()

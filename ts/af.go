@@ -9,7 +9,7 @@ import (
 type AF []byte
 
 // Flags returns adaptation field flags.
-// If len(af) == 0 returns zero flags (all methods returns false).
+// If len(af) == 0 returns zero flags (all AFFlags methods returns false).
 func (a AF) Flags() AFFlags {
 	if len(a) == 0 {
 		return 0
@@ -62,46 +62,45 @@ func (f AFFlags) HasExtension() bool {
 var (
 	ErrAFTooShort = errors.New("adaptation field is too short")
 	ErrBadPCR     = errors.New("PCR decoding error")
+	ErrNotInAF    = errors.New("no such entry in adaptation field")
 )
 
-func panicAFField(fname string) {
-	panic("there is no " + fname + "field in adaptation field")
-}
-
-type PCR uint64
+type PCR int64
 
 func decodePCR(a []byte) (PCR, error) {
 	b := uint(a[0])<<24 | uint(a[1])<<16 | uint(a[2])<<8 | uint(a[3])
 	base := uint64(b)<<1 | uint64(a[4])>>7
 	ext := uint(a[4]&1)<<8 | uint(a[5])
 	if ext >= 300 {
-		return 0, ErrBadPCR
+		return -1, ErrBadPCR
 	}
 	return PCR(base*300 + uint64(ext)), nil
 }
 
-// Nanosec returns c * 1000 / 27
+// Nanosec returns (c * 1000 + 13) / 27
 func (c PCR) Nanosec() time.Duration {
-	return time.Duration(c * 1000 / 27)
+	return time.Duration(c*1000+13) / 27
 }
 
-// PCR returns ErrBadPCR if ContainsPCR() == 0 or can't decode PCR
+// PCR returns value of PCR in a. It returns PCR == -1 and not nil
+// error if there is no PCR in AF or it can't decode PCR.
 func (a AF) PCR() (PCR, error) {
 	if !a.Flags().ContainsPCR() {
-		panicAFField("PCR")
+		return -1, ErrNotInAF
 	}
 	end := 1 + 6
 	if len(a) < end {
-		return 0, ErrAFTooShort
+		return -1, ErrAFTooShort
 	}
 	return decodePCR(a[end-6 : end])
 }
 
-// OPCR returns BadPCR if ContainsOPCR() == 0 or can't decode OPCR
+// OPCR returns value of OPCR in a. It returns OPCR == -1 and not nil
+// error if there is no OPCR in AF or it can't decode OPCR.
 func (a AF) OPCR() (PCR, error) {
 	f := a.Flags()
 	if !f.ContainsOPCR() {
-		panicAFField("OPCR")
+		return -1, ErrNotInAF
 	}
 	end := 1 + 7
 	if f.ContainsPCR() {
@@ -116,7 +115,7 @@ func (a AF) OPCR() (PCR, error) {
 func (a AF) SpliceCountdown() (int8, error) {
 	f := a.Flags()
 	if !f.SplicingPoint() {
-		panicAFField("SpliceCountdown")
+		return -1, ErrNotInAF
 	}
 	offset := 1
 	if f.ContainsPCR() {
@@ -126,7 +125,7 @@ func (a AF) SpliceCountdown() (int8, error) {
 		offset += 6
 	}
 	if len(a) < offset+1 {
-		return 0, ErrAFTooShort
+		return -1, ErrAFTooShort
 	}
 	return int8(a[offset]), nil
 }

@@ -35,36 +35,44 @@ func encodeU16(b []byte, v uint16) {
 	b[1] = byte(v)
 }
 
-func decodeBCD(bcd byte) byte {
-	h := bcd >> 4
+func decodeBCD(bcd byte) int {
+	h := int(bcd) >> 4
 	if h > 9 {
-		return 0xff
+		return -1
 	}
-	l := bcd & 0x0f
+	l := int(bcd) & 0x0f
 	if l > 9 {
-		return 0xff
+		return -1
 	}
 	return h*10 + l
+}
+
+func encodeBCD(d int) byte {
+	if uint(d) > 99 {
+		panic("psi: encodeBCD(>99)")
+	}
+	return byte(d/10<<4 | d%10)
+
 }
 
 var ErrBadMJDUTC = errors.New("bad MJD UTC time")
 
 func decodeMJDUTC(b []byte) (utc time.Time, err error) {
 	if len(b) != 5 {
-		panic("encodeMJDUTC with len(b) != 5")
+		panic("dcodeMJDUTC with len(b) != 5")
 	}
 	hour := decodeBCD(b[2])
-	if hour == 0xff {
+	if hour < 0 {
 		err = ErrBadMJDUTC
 		return
 	}
 	min := decodeBCD(b[3])
-	if min == 0xff {
+	if min < 0 {
 		err = ErrBadMJDUTC
 		return
 	}
 	sec := decodeBCD(b[4])
-	if sec == 0xff {
+	if sec < 0 {
 		err = ErrBadMJDUTC
 		return
 	}
@@ -80,10 +88,30 @@ func decodeMJDUTC(b []byte) (utc time.Time, err error) {
 	year += 1900
 	utc = time.Date(
 		int(year), time.Month(month), int(day),
-		int(hour), int(min), int(sec), 0,
+		hour, min, sec, 0,
 		time.UTC,
 	)
 	return
+}
+
+func encodeMJDUTC(b []byte, t time.Time) {
+	if len(b) != 5 {
+		panic("encodeMJDUTC with len(b) != 5")
+	}
+	t = t.UTC()
+	var l int
+	y, m, d := t.Date()
+	if m <= 2 {
+		l = 1
+	}
+	mjd := 14956 + int(d) +
+		int(float64(y-1900-l)*365.25) +
+		int(float64(int(m)+1+l*12)*30.6001)
+	b[0] = byte(mjd >> 8)
+	b[1] = byte(mjd)
+	b[2] = encodeBCD(t.Hour())
+	b[3] = encodeBCD(t.Minute())
+	b[4] = encodeBCD(t.Second())
 }
 
 var crcTable [256]uint32

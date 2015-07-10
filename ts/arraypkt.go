@@ -37,12 +37,12 @@ func (p *ArrayPkt) SetPid(pid int16) {
 	p[2] = byte(pid)
 }
 
-func (p *ArrayPkt) CC() byte {
-	return p[3] & 0xf
+func (p *ArrayPkt) CC() int8 {
+	return int8(p[3] & 0xf)
 }
 
-func (p *ArrayPkt) SetCC(b byte) {
-	p[3] = p[3]&0xf0 | b&0x0f
+func (p *ArrayPkt) SetCC(b int8) {
+	p[3] = p[3]&0xf0 | byte(b)&0x0f
 }
 
 func (p *ArrayPkt) IncCC() {

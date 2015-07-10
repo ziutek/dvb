@@ -50,6 +50,32 @@ func (sdt SDT) ServiceInfo() ServiceInfoList {
 	return ServiceInfoList{Table(sdt).Cursor()}
 }
 
+func (sdt *SDT) SetEmpty() {
+	(*Table)(sdt).SetEmpty()
+}
+
+func (sdt *SDT) Append(onid uint16, si ServiceInfo) {
+	head := make([]byte, 3)
+	encodeU16(head[0:2], onid)
+	head[2] = 0xff
+	data := TableAllocator{
+		Tab:           (*Table)(sdt),
+		SectionMaxLen: ISOSectionMaxLen,
+		GenericSyntax: true,
+		PrivateSyntax: true,
+		SectionHeader: head,
+	}.Alloc(len(si))
+	copy(data, si)
+}
+
+func (sdt *SDT) Close(tsid uint16, actualMux, current bool, version int8) {
+	tableId := byte(0x46)
+	if actualMux {
+		tableId = 0x42
+	}
+	(*Table)(sdt).Close(tableId, tsid, current, version)
+}
+
 type ServiceInfoList struct {
 	TableCursor
 }
@@ -140,6 +166,11 @@ func (si ServiceInfo) Status() ServiceStatus {
 	return ServiceStatus(si[3] >> 5)
 }
 
+// SetStatus sets running_status field.
+func (si ServiceInfo) SetStatus(s ServiceStatus) {
+	si[3] = si[3]&0x1f | byte(s<<5)
+}
+
 // Scrambled returns the value of free_CA_mode field.
 func (si ServiceInfo) Scrambled() bool {
 	return si[3]&0x10 != 0
@@ -172,10 +203,10 @@ func (si ServiceInfo) ClearDescriptors() {
 	si.setDescrLoopLen(0)
 }
 
-func (si ServiceInfo) AppendDescriptors(ds ...Descriptor) {
+func (si *ServiceInfo) AppendDescriptors(ds ...Descriptor) {
 	n := si.descrLoopLen()
 	for _, d := range ds {
-		si = append(si[:5+n], d...)
+		*si = append((*si)[:5+n], d...)
 		n += len(d)
 	}
 	si.setDescrLoopLen(n)
@@ -187,22 +218,4 @@ func (si ServiceInfo) setDescriptorsLoopLength(n int) {
 	}
 	si[3] = si[3]&0xf0 | byte(n>>8)
 	si[4] = byte(n)
-}
-
-func (sdt *SDT) SetEmpty() {
-	(*Table)(sdt).SetEmpty()
-}
-
-func (sdt *SDT) Append(si ServiceInfo) {
-	data := TableAllocator{
-		Tab:           (*Table)(sdt),
-		SectionMaxLen: ISOSectionMaxLen,
-		GenericSyntax: true,
-		PrivateSyntax: true,
-	}.Alloc(len(si))
-	copy(data, si)
-}
-
-func (sdt *SDT) Close(tsid uint16, current bool, version int8) {
-	(*Table)(sdt).Close(17, tsid, current, version)
 }

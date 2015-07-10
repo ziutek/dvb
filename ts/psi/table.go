@@ -194,6 +194,7 @@ type TableAllocator struct {
 	SectionMaxLen int
 	GenericSyntax bool
 	PrivateSyntax bool
+	SectionHeader []byte
 }
 
 func (ta TableAllocator) Alloc(n int) []byte {
@@ -216,6 +217,10 @@ func (ta TableAllocator) Alloc(n int) []byte {
 			sec = MakeEmptySection(ta.SectionMaxLen, ta.GenericSyntax)
 			sec.SetPrivateSyntax(ta.PrivateSyntax)
 			*t = append(*t, sec)
+		}
+		if hlen := len(ta.SectionHeader); hlen > 0 {
+			head := sec.Alloc(hlen)
+			copy(head, ta.SectionHeader)
 		}
 		data = sec.Alloc(n)
 	}

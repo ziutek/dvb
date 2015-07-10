@@ -111,6 +111,27 @@ func ParseServiceDescriptor(d Descriptor) (sd ServiceDescriptor, ok bool) {
 	return
 }
 
+/*func (sd ServiceDescriptor) Append(dl *DescriptorList)  {
+	d := dl.Alloc(1 + 1 + len(sd.ProviderName) + 1 + len(sd.ServiceName)
+	d.SetTag(ServiceTag)
+	data := d.Data()
+	data[0] = len(sd.ProviderName)
+	copy(data[1:],
+}*/
+
+func MakeServiceDescriptor(typ ServiceType, provider, service string) Descriptor {
+	p := EncodeText(provider)
+	s := EncodeText(service)
+	d := MakeDescriptor(ServiceTag, 1+1+len(p)+1+len(s))
+	data := d.Data()[:0]
+	data = append(data, byte(typ))
+	data = append(data, byte(len(p)))
+	data = append(data, p...)
+	data = append(data, byte(len(s)))
+	data = append(data, s...)
+	return d
+}
+
 type NetworkNameDescriptor []byte
 
 func ParseNetworkNameDescriptor(d Descriptor) (nnd NetworkNameDescriptor, ok bool) {

@@ -2,8 +2,24 @@ package psi
 
 type Descriptor []byte
 
+const descrDataTooLong = "psi: data to long to alloc descriptor"
+
+func MakeDescriptor(tag DescriptorTag, datalen int) Descriptor {
+	if uint(datalen) > 255 {
+		panic(descrDataTooLong)
+	}
+	d := make(Descriptor, 1+1+datalen)
+	d.SetTag(tag)
+	d[1] = byte(datalen)
+	return d
+}
+
 func (d Descriptor) Tag() DescriptorTag {
 	return DescriptorTag(d[0])
+}
+
+func (d Descriptor) SetTag(tag DescriptorTag) {
+	d[0] = byte(tag)
 }
 
 func (d Descriptor) Data() []byte {
@@ -28,11 +44,24 @@ func (dl DescriptorList) Pop() (d Descriptor, rdl DescriptorList) {
 	return
 }
 
-// Append adds d to the end of the dl. It works like Go append function so need
-// to be used in this way:
-//     dl = dl.Append(d)
-func (dl DescriptorList) Append(d Descriptor) DescriptorList {
-	return append(dl, d...)
+// Alloc allocates descriptor for datalen bytes of data + 2 bytes for tag and
+// data length.
+func (dl *DescriptorList) Alloc(datalen int) Descriptor {
+	if uint(datalen) > 255 {
+		panic("descrDataTooLong")
+	}
+	m := len(*dl)
+	n := m + datalen + 2
+	if n <= cap(*dl) {
+		*dl = (*dl)[:n]
+	} else {
+		ndl := make(DescriptorList, n, n+m)
+		copy(ndl, *dl)
+		*dl = ndl
+	}
+	d := Descriptor((*dl)[m:n])
+	d[1] = byte(datalen)
+	return d
 }
 
 type DescriptorTag byte

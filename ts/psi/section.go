@@ -76,8 +76,11 @@ func (s Section) SetReserved(r int) {
 // Len returns length of the whole section (section_length + 3) or -1 if
 // section_length filed contains incorrect value
 func (s Section) Len() int {
-	l := ((int(s[1]&0x0f) << 8) | int(s[2])) + 3
-	if l < 4+3 || l > SectionMaxLen {
+	l := int(decodeU16(s[1:3]))&0xfff + 3
+	if l > SectionMaxLen {
+		return -1
+	}
+	if s.GenericSyntax() && l < 3+5+4 {
 		return -1
 	}
 	return l
@@ -99,7 +102,7 @@ func (s Section) setLen(n int) {
 // Version returns the value of version_number field.
 func (s Section) Version() int8 {
 	if !s.GenericSyntax() {
-		panic("GenericSyntax need for Version")
+		panic("psi: GenericSyntax need for Version")
 	}
 	return int8(s[5]>>1) & 0x1f
 }
@@ -108,7 +111,7 @@ func (s Section) Version() int8 {
 // It panic if v > 31
 func (s Section) SetVersion(v int8) {
 	if uint(v) > 31 {
-		panic("value for version_number field is too large")
+		panic("psi: value for version_number field is too large")
 	}
 	s[5] = s[5]&0xc1 | byte(v<<1)
 }
@@ -116,7 +119,7 @@ func (s Section) SetVersion(v int8) {
 // Current returns the value of current_next_indicator field
 func (s Section) Current() bool {
 	if !s.GenericSyntax() {
-		panic("GenericSyntax need for Current")
+		panic("psi: GenericSyntax need for Current")
 	}
 	return s[5]&0x01 != 0
 }
@@ -133,7 +136,7 @@ func (s Section) SetCurrent(c bool) {
 // Number returns the value of section_number field
 func (s Section) Number() byte {
 	if !s.GenericSyntax() {
-		panic("GenericSyntax need for Number")
+		panic("psi: GenericSyntax need for Number")
 	}
 	return s[6]
 }
@@ -146,7 +149,7 @@ func (s Section) SetNumber(n byte) {
 // LastNumber returns the value of last_section_number field
 func (s Section) LastNumber() byte {
 	if !s.GenericSyntax() {
-		panic("GenericSyntax need for LastNumber")
+		panic("psi: GenericSyntax need for LastNumber")
 	}
 	return s[7]
 }
@@ -156,23 +159,28 @@ func (s Section) SetLastNumber(n byte) {
 	s[7] = n
 }
 
-// Data rturns data part of section. It returns nil if !s.GenericSyntax().
+// Data rturns data part of section.
 func (s Section) Data() []byte {
-	end := s.Len() - 4
-	if end == -1-4 || end > len(s) {
-		panic("there is no enough data or section_length has incorrect value")
-	}
+	end := s.Len()
+	beg := 3
 	if s.GenericSyntax() {
-		return s[8:end]
+		beg += 5 // Generic header.
+		end -= 4 // CRC.
 	}
-	return s[3:end]
+	if end < beg || end > len(s) {
+		panic("psi: not enough data or section_length has incorrect value")
+	}
+	return s[beg:end]
 }
 
 // CheckCRC returns true if s.Len() is valid and CRC32 of whole
 // section is correct
 func (s Section) CheckCRC() bool {
+	if !s.GenericSyntax() {
+		panic("psi: GenericSyntax need for CheckCRC")
+	}
 	l := s.Len()
-	if l == -1 || len(s) < l {
+	if l < 4 || len(s) < l {
 		return false
 	}
 	crc := decodeU32(s[l-4 : l])
@@ -181,9 +189,12 @@ func (s Section) CheckCRC() bool {
 
 // MakeCRC calculates CRC32 for whole section and uses it to set CRC_32 field
 func (s Section) MakeCRC() {
+	if !s.GenericSyntax() {
+		panic("psi: GenericSyntax need for MakeCRC")
+	}
 	l := s.Len()
-	if l == -1 || len(s) < l {
-		panic("bad section length to calculate CRC sum")
+	if l < 4 || len(s) < l {
+		panic("psi: bad section length to calculate CRC sum")
 	}
 	crc := mpegCRC32(s[0 : l-4])
 	encodeU32(s[l-4:l], crc)
@@ -212,14 +223,20 @@ func MakeEmptySection(maxLen int, genericSyntax bool) Section {
 }
 
 // Alloc allocates n bytes in section. It returns nil if there is no room for
-// requested size. Alloc invalidates CRC sum. Use MakeCRC to recalculate it.
+// requested size. Alloc invalidates CRC sum if used. Use MakeCRC to
+// recalculate it.
 func (s Section) Alloc(n int) []byte {
-	b := s.Len() - 4
+	b := s.Len()
 	e := b + n
-	if e+4 > s.Cap() {
+	if e > s.Cap() {
 		return nil
 	}
-	s.setLen(e + 4)
+	s.setLen(e)
+	if s.GenericSyntax() {
+		// s.Len() includes CRC
+		b -= 4
+		e -= 4
+	}
 	return s[b:e]
 }
 

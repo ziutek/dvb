@@ -46,12 +46,12 @@ func (p SlicePkt) SetPid(pid int16) {
 	p[2] = byte(pid)
 }
 
-func (p SlicePkt) CC() byte {
-	return p[3] & 0x0f
+func (p SlicePkt) CC() int8 {
+	return int8(p[3] & 0x0f)
 }
 
-func (p SlicePkt) SetCC(b byte) {
-	p[3] = p[3]&0xf0 | b&0x0f
+func (p SlicePkt) SetCC(b int8) {
+	p[3] = p[3]&0xf0 | byte(b)&0x0f
 }
 
 func (p SlicePkt) IncCC() {

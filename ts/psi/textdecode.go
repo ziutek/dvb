@@ -32,9 +32,14 @@ func DecodeText(s []byte) string {
 		}
 		n := int(uint16(s[0])<<8 | uint16(s[1]))
 		if n > 0 && n != 12 && n < 16 {
-			return textenc.DecodeISO8859(n, s)
+			return textenc.DecodeISO8859(n, s[2:])
 		}
 	}
 	// Assume UTF8
 	return string(s)
+}
+
+func EncodeText(s string) []byte {
+	// BUG: this assumes that s is always ISO6937 compatible.
+	return []byte(s)
 }

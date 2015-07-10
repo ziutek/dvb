@@ -21,9 +21,9 @@ type Pkt interface {
 	// SetPid sets packet identifier
 	SetPid(int16)
 	// CC returns value of continuity counter
-	CC() byte
+	CC() int8
 	// SetCC sets the value of continuity counter to byte&0x0f
-	SetCC(byte)
+	SetCC(int8)
 	// IncCC increments  continuity counter
 	IncCC()
 	// Flags returns packet flags
