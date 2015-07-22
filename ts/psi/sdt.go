@@ -54,26 +54,37 @@ func (sdt *SDT) SetEmpty() {
 	(*Table)(sdt).SetEmpty()
 }
 
+var (
+	sdtCfgActual = &TableConfig{
+		TableId:        0x42,
+		SectionMaxLen:  ISOSectionMaxLen,
+		SectionHeadLen: 3,
+		GenericSyntax:  true,
+		PrivateSyntax:  true,
+	}
+	sdtCfgOther = &TableConfig{
+		TableId:        0x46,
+		SectionMaxLen:  ISOSectionMaxLen,
+		SectionHeadLen: 3,
+		GenericSyntax:  true,
+		PrivateSyntax:  true,
+	}
+)
+
 func (sdt *SDT) Append(onid uint16, si ServiceInfo) {
-	head := make([]byte, 3)
+	var head [3]byte
 	encodeU16(head[0:2], onid)
 	head[2] = 0xff
-	data := TableAllocator{
-		Tab:           (*Table)(sdt),
-		SectionMaxLen: ISOSectionMaxLen,
-		GenericSyntax: true,
-		PrivateSyntax: true,
-		SectionHeader: head,
-	}.Alloc(len(si))
+	data := (*Table)(sdt).Alloc(len(si), sdtCfgActual, 0, head[:])
 	copy(data, si)
 }
 
-func (sdt *SDT) Close(tsid uint16, actualMux, current bool, version int8) {
-	tableId := byte(0x46)
+func (sdt SDT) Close(tsid uint16, actualMux, current bool, version int8) {
+	sdtcfg := sdtCfgOther
 	if actualMux {
-		tableId = 0x42
+		sdtcfg = sdtCfgActual
 	}
-	(*Table)(sdt).Close(tableId, tsid, current, version)
+	Table(sdt).Close(sdtcfg, tsid, current, version)
 }
 
 type ServiceInfoList struct {
@@ -177,15 +188,11 @@ func (si ServiceInfo) Scrambled() bool {
 }
 
 func (si ServiceInfo) descrLoopLen() int {
-	return int(decodeU16(si[3:5]) & 0x0fff)
+	return loopLen(si[3:5])
 }
 
 func (si ServiceInfo) setDescrLoopLen(n int) {
-	if uint(n) > 0xfff {
-		panic("psi: Bad descriptors loop length to set")
-	}
-	si[3] = si[3]&0xf0 | byte(n>>8)
-	si[4] = byte(n)
+	setLoopLen(si[3:5], n)
 }
 
 func (si ServiceInfo) Descriptors() DescriptorList {
@@ -210,12 +217,4 @@ func (si *ServiceInfo) AppendDescriptors(ds ...Descriptor) {
 		n += len(d)
 	}
 	si.setDescrLoopLen(n)
-}
-
-func (si ServiceInfo) setDescriptorsLoopLength(n int) {
-	if uint(n) > 0xfff {
-		panic("psi: Bad descriptors loop length to set")
-	}
-	si[3] = si[3]&0xf0 | byte(n>>8)
-	si[4] = byte(n)
 }

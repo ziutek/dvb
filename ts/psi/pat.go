@@ -91,18 +91,20 @@ func (pat *PAT) SetEmpty() {
 	(*Table)(pat).SetEmpty()
 }
 
+var patCfg = &TableConfig{
+	TableId:       0,
+	SectionMaxLen: ISOSectionMaxLen,
+	GenericSyntax: true,
+}
+
 // Append appends next program to PAT. After Append pat is in invalid state.
 // Use Close to recalculate all section numbers and CRCs.
 func (pat *PAT) Append(progId uint16, pmtpid int16) {
-	data := TableAllocator{
-		Tab:           (*Table)(pat),
-		SectionMaxLen: ISOSectionMaxLen,
-		GenericSyntax: true,
-	}.Alloc(4)
+	data := (*Table)(pat).Alloc(4, patCfg, 0, nil)
 	encodeU16(data[0:2], progId)
 	encodeU16(data[2:4], uint16(pmtpid)|0xe000)
 }
 
-func (pat *PAT) Close(tsid uint16, current bool, version int8) {
-	(*Table)(pat).Close(0, tsid, current, version)
+func (pat PAT) Close(tsid uint16, current bool, version int8) {
+	Table(pat).Close(patCfg, tsid, current, version)
 }

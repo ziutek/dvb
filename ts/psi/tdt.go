@@ -22,7 +22,7 @@ func MakeTDT() TDT {
 	s := MakeEmptySection(TDTSectionLen, false)
 	s.SetTableId(0x70)
 	s.SetPrivateSyntax(true)
-	s.Alloc(5)
+	s.Alloc(5, 0)
 	return TDT(s)
 }
 

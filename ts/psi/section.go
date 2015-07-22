@@ -223,12 +223,12 @@ func MakeEmptySection(maxLen int, genericSyntax bool) Section {
 }
 
 // Alloc allocates n bytes in section. It returns nil if there is no room for
-// requested size. Alloc invalidates CRC sum if used. Use MakeCRC to
+// n+m bytes. Alloc invalidates CRC sum if used. Use MakeCRC to
 // recalculate it.
-func (s Section) Alloc(n int) []byte {
+func (s Section) Alloc(n, m int) []byte {
 	b := s.Len()
 	e := b + n
-	if e > s.Cap() {
+	if e+m > s.Cap() {
 		return nil
 	}
 	s.setLen(e)
@@ -240,8 +240,8 @@ func (s Section) Alloc(n int) []byte {
 	return s[b:e]
 }
 
-// Set empty initializes section lenght, so s becomes empty. After SetEmpty
-// SetEmpty invalidates CRC sum. Use MakeCRC to recalculate it.
+// SetEmpty initializes section lenght, so s becomes empty. SetEmpty
+// invalidates CRC sum. Use MakeCRC to recalculate it.
 func (s Section) SetEmpty() {
 	n := 3
 	if s.GenericSyntax() {

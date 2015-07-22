@@ -38,6 +38,9 @@ func (nit *NIT) Update(r SectionReader, actualMux bool, current bool) error {
 
 // Descriptors returns network descriptors list
 func (nit NIT) Descriptors() TableDescriptors {
+	// BUG: Network descriptros can be in more than one (first) section. They
+	// should be located in the first sections of table and they should end
+	// before first not empty transport stream looop.
 	return Table(nit).Descriptors(0)
 }
 
@@ -45,18 +48,68 @@ func (nit NIT) MuxInfo() MuxInfoList {
 	return MuxInfoList{Table(nit).Cursor()}
 }
 
+var (
+	nitCfgActual = &TableConfig{
+		TableId:       0x40,
+		GenericSyntax: true,
+		PrivateSyntax: true,
+		SectionMaxLen: ISOSectionMaxLen,
+		NumLenFields:  2,
+	}
+	nitCfgOther = &TableConfig{
+		TableId:       0x41,
+		GenericSyntax: true,
+		PrivateSyntax: true,
+		SectionMaxLen: ISOSectionMaxLen,
+		NumLenFields:  2,
+	}
+)
+
+// AppendNetDescriptors appends network descriptors ds to nit. It can be called
+// only before first AppendMuxInfo call.
+func (nit *NIT) AppendNetDescriptor(ds ...Descriptor) {
+	for _, d := range ds {
+		data := (*Table)(nit).Alloc(len(d), nitCfgActual, 0, nil)
+		copy(data, d)
+	}
+}
+
+// AppendMuxInfos appends information about transport stream to nit.
+func (nit *NIT) AppendMuxInfo(mis ...MuxInfo) {
+	for _, mi := range mis {
+		data := (*Table)(nit).Alloc(len(mi), nitCfgActual, 1, nil)
+		copy(data, mi)
+	}
+}
+
+func (nit NIT) Close(netid uint16, actualMux, current bool, version int8) {
+	nitcfg := nitCfgOther
+	if actualMux {
+		nitcfg = nitCfgActual
+	}
+	Table(nit).Close(nitcfg, netid, current, version)
+}
+
 type MuxInfo []byte
 
-func (i MuxInfo) MuxId() uint16 {
-	return decodeU16(i[0:2])
+func (mi MuxInfo) MuxId() uint16 {
+	return decodeU16(mi[0:2])
 }
 
-func (i MuxInfo) OrgNetId() uint16 {
-	return decodeU16(i[2:4])
+func (mi MuxInfo) SetMuxId(tsid uint16) {
+	encodeU16(mi[0:2], tsid)
 }
 
-func (i MuxInfo) Descriptors() DescriptorList {
-	return DescriptorList(i[6:])
+func (mi MuxInfo) OrgNetId() uint16 {
+	return decodeU16(mi[2:4])
+}
+
+func (mi MuxInfo) SetOrgNetId(onid uint16) {
+	encodeU16(mi[2:4], onid)
+}
+
+func (mi MuxInfo) Descriptors() DescriptorList {
+	return DescriptorList(mi[6:])
 }
 
 type MuxInfoList struct {
@@ -101,4 +154,31 @@ func (il MuxInfoList) Pop() (MuxInfo, MuxInfoList) {
 	data := il.Data[:n]
 	il.Data = il.Data[n:]
 	return data, il
+}
+
+func MakeMuxInfo() MuxInfo {
+	mi := make(MuxInfo, 6)
+	mi[4] = 0xf0
+	return mi
+}
+
+func (mi MuxInfo) descrLoopLen() int {
+	return loopLen(mi[4:6])
+}
+
+func (mi MuxInfo) setDescrLoopLen(n int) {
+	setLoopLen(mi[4:6], n)
+}
+
+func (mi MuxInfo) ClearDescriptors() {
+	mi.setDescrLoopLen(0)
+}
+
+func (mi *MuxInfo) AppendDescriptor(ds ...Descriptor) {
+	n := mi.descrLoopLen()
+	for _, d := range ds {
+		*mi = append((*mi)[:6+n], d...)
+		n += len(d)
+	}
+	mi.setDescrLoopLen(n)
 }

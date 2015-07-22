@@ -114,6 +114,23 @@ func encodeMJDUTC(b []byte, t time.Time) {
 	b[4] = encodeBCD(t.Second())
 }
 
+func setLoopLen(b []byte, n int) {
+	if uint(n) > 0xfff {
+		panic("psi: Bad descriptors loop length to set")
+	}
+	b[0] = 0xf0 | byte(n>>8)
+	b[1] = byte(n)
+}
+
+func clearLoopLen(b []byte) {
+	b[0] = 0xf0
+	b[1] = 0
+}
+
+func loopLen(b []byte) int {
+	return int(b[0]&0x0f)<<8 + int(b[1])
+}
+
 var crcTable [256]uint32
 
 func mpegCRC32(buf []byte) uint32 {

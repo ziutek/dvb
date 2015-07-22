@@ -113,20 +113,6 @@ func (t *Table) Update(r SectionReader, tableId byte, private, current bool, sec
 	return nil
 }
 
-// Close recalculates section numbers and makes CRC sums for all sections.
-func (t Table) Close(tableId byte, tableIdExt uint16, current bool, version int8) {
-	lastnum := byte(len(t) - 1)
-	for num, s := range t {
-		s.SetTableId(tableId)
-		s.SetTableIdExt(tableIdExt)
-		s.SetCurrent(current)
-		s.SetVersion(version)
-		s.SetNumber(byte(num))
-		s.SetLastNumber(lastnum)
-		s.MakeCRC()
-	}
-}
-
 // Cursor returns TableCursor that can be used to obtain data from table.
 func (t Table) Cursor() TableCursor {
 	return TableCursor{Tab: t}
@@ -189,40 +175,97 @@ func (t *Table) SetEmpty() {
 	*t = (*t)[:0]
 }
 
-type TableAllocator struct {
-	Tab           *Table
-	SectionMaxLen int
-	GenericSyntax bool
-	PrivateSyntax bool
-	SectionHeader []byte
+type TableConfig struct {
+	TableId        byte
+	GenericSyntax  bool
+	PrivateSyntax  bool
+	SectionMaxLen  int
+	SectionHeadLen int
+	NumLenFields   int // Number of length fields in section.
 }
 
-func (ta TableAllocator) Alloc(n int) []byte {
+func getlf(sec Section, hlen, uself int) []byte {
+	data := sec.Data()[hlen:]
+	for uself > 0 && len(data) > 0 {
+		lf := loopLen(data[:2])
+		data = data[2+lf:]
+		uself--
+	}
+	if len(data) == 0 {
+		lfs := sec.Alloc((uself+1)*2, 0)
+		for i := 0; i < len(lfs); i += 2 {
+			clearLoopLen(lfs[i : i+2])
+		}
+		return lfs[len(lfs)-2:]
+	}
+	return data[:2]
+}
+
+func lfadd(sec Section, hlen, uself, n int) {
+	lf := getlf(sec, hlen, uself)
+	setLoopLen(lf, loopLen(lf)+n)
+}
+
+func (t *Table) Alloc(n int, cfg *TableConfig, uself int, sectionHeader []byte) []byte {
 	var (
 		sec  Section
 		data []byte
 	)
-	t := ta.Tab
+	postlf := (cfg.NumLenFields - uself - 1) * 2
+	if postlf < 0 {
+		postlf = 0
+	}
 	m := len(*t)
 	if m > 0 {
 		sec = (*t)[m-1]
-		data = sec.Alloc(n)
+		if cfg.NumLenFields > 0 {
+			lfadd(sec, cfg.SectionHeadLen, uself, n)
+		}
+		data = sec.Alloc(n, postlf)
 	}
 	if sec == nil || data == nil {
+		if sec != nil && postlf > 0 {
+			// Insert zero length fields after data.
+			tail := sec.Alloc(postlf, 0)
+			for i := 0; i < postlf; i += 2 {
+				clearLoopLen(tail[i : i+2])
+			}
+		}
 		if m < cap(*t) {
 			*t = (*t)[:m+1]
 			sec = (*t)[m]
 			sec.SetEmpty()
 		} else {
-			sec = MakeEmptySection(ta.SectionMaxLen, ta.GenericSyntax)
-			sec.SetPrivateSyntax(ta.PrivateSyntax)
+			sec = MakeEmptySection(cfg.SectionMaxLen, cfg.GenericSyntax)
+			sec.SetPrivateSyntax(cfg.PrivateSyntax)
 			*t = append(*t, sec)
 		}
-		if hlen := len(ta.SectionHeader); hlen > 0 {
-			head := sec.Alloc(hlen)
-			copy(head, ta.SectionHeader)
+		if cfg.SectionHeadLen > 0 {
+			head := sec.Alloc(cfg.SectionHeadLen, postlf)
+			copy(head, sectionHeader)
 		}
-		data = sec.Alloc(n)
+		if cfg.NumLenFields > 0 {
+			lfadd(sec, cfg.SectionHeadLen, uself, n)
+		}
+		data = sec.Alloc(n, postlf)
 	}
 	return data
+}
+
+// Close recalculates section numbers and makes CRC sums for all sections.
+func (t Table) Close(cfg *TableConfig, tableIdExt uint16, current bool, version int8) {
+	lastnum := byte(len(t) - 1)
+	if cfg.NumLenFields > 0 {
+		// Properly initialize unused length fields in last section.
+		getlf(t[lastnum], cfg.SectionHeadLen, cfg.NumLenFields-1)
+	}
+	for num, s := range t {
+		s.SetTableId(cfg.TableId)
+		s.SetTableIdExt(tableIdExt)
+		s.SetCurrent(current)
+		s.SetVersion(version)
+		s.SetNumber(byte(num))
+		s.SetLastNumber(lastnum)
+		s.MakeCRC()
+	}
 }

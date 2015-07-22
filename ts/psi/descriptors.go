@@ -143,6 +143,13 @@ func ParseNetworkNameDescriptor(d Descriptor) (nnd NetworkNameDescriptor, ok boo
 	return
 }
 
+func MakeNetworkNameDescriptor(netname string) Descriptor {
+	nn := EncodeText(netname)
+	d := MakeDescriptor(NetworkNameTag, len(nn))
+	copy(d.Data(), nn)
+	return d
+}
+
 type ServiceListDescriptor []byte
 
 func ParseServiceListDescriptor(d Descriptor) (sld ServiceListDescriptor, ok bool) {
@@ -167,8 +174,11 @@ func (d ServiceListDescriptor) Pop() (sid uint16, typ ServiceType, rd ServiceLis
 }
 
 type TerrestrialDeliverySystemDescriptor struct {
-	Freq          uint64 // center frequency [Hz]
-	Bandwidth     uint32 // bandwidth [Hz]
+	Freq          int64 // center frequency [Hz]
+	Bandwidth     int32 // bandwidth [Hz]
+	HighPrio      bool
+	TimeSlicing   bool
+	MPEFEC        bool
 	Constellation dvb.Modulation
 	Hierarchy     dvb.Hierarchy
 	CodeRateHP    dvb.CodeRate
@@ -199,15 +209,22 @@ func ParseTerrestrialDeliverySystemDescriptor(d Descriptor) (tds TerrestrialDeli
 	if len(data) < 11 {
 		return
 	}
-	tds.Freq = uint64(decodeU32(data[0:4])) * 10
+	tds.Freq = int64(decodeU32(data[0:4])) * 10
 	switch data[4] >> 5 {
 	case 0:
 		tds.Bandwidth = 8e6
 	case 1:
 		tds.Bandwidth = 7e6
+	case 2:
+		tds.Bandwidth = 6e6
+	case 3:
+		tds.Bandwidth = 5e6
 	default:
 		return
 	}
+	tds.HighPrio = data[4]&0x10 != 0
+	tds.TimeSlicing = data[4]&0x08 == 0
+	tds.MPEFEC = data[4]&0x04 == 0
 	switch data[5] >> 6 {
 	case 0:
 		tds.Constellation = dvb.QPSK
@@ -231,13 +248,69 @@ func ParseTerrestrialDeliverySystemDescriptor(d Descriptor) (tds TerrestrialDeli
 		return
 	}
 	tds.Guard = dvb.Guard((data[6] >> 3) & 0x03)
-	tds.TxMode = dvb.TxMode((data[6] >> 1) & 0x3)
+	tds.TxMode = dvb.TxMode((data[6] >> 1) & 0x03)
 	if tds.TxMode > dvb.TxMode8k {
 		return
 	}
 	tds.OtherFreq = data[6]&0x01 != 0
 	ok = true
 	return
+}
+
+func (tds *TerrestrialDeliverySystemDescriptor) Make() Descriptor {
+	d := MakeDescriptor(TerrestrialDeliverySystemTag, 11)
+	data := d.Data()
+	encodeU32(data[0:4], uint32((tds.Freq+5)/10))
+	var b byte
+	switch tds.Bandwidth {
+	case 8e6:
+		b = 0 << 5
+	case 7e6:
+		b = 1 << 5
+	case 6e6:
+		b = 2 << 5
+	case 5e6:
+		b = 3 << 5
+	default: // Unknown
+		b = 7 << 5
+	}
+	if tds.HighPrio {
+		b |= 0x10
+	}
+	if tds.TimeSlicing {
+		b |= 0x08
+	}
+	if !tds.MPEFEC {
+		b |= 0x04
+	}
+	b |= 0x03 // Reserved
+	data[4] = b
+	switch tds.Constellation {
+	case dvb.QPSK:
+		b = 0 << 6
+	case dvb.QAM16:
+		b = 1 << 6
+	case dvb.QAM64:
+		b = 2 << 6
+	default: // Unknown
+		b = 3 << 6
+	}
+	b |= byte(tds.Hierarchy&0x07) << 3
+	b |= byte(tds.CodeRateHP & 0x07)
+	data[5] = b
+	b = byte(tds.CodeRateLP&0x07) << 5
+	b |= byte(tds.Guard&0x03) << 3
+	b |= byte(tds.TxMode&0x03) << 1
+	if tds.OtherFreq {
+		b |= 0x01
+	}
+	data[6] = b
+	// Reserved
+	data[7] = 0xff
+	data[8] = 0xff
+	data[9] = 0xff
+	data[10] = 0xff
+	return d
 }
 
 type CAS uint16

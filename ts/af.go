@@ -65,7 +65,14 @@ var (
 	ErrNotInAF    = errors.New("no such entry in adaptation field")
 )
 
+// PCR contains the number of ticks of 27MHz generator. PCR generator counts
+// modulo PCRMod.
 type PCR int64
+
+const (
+	PCRMod  = (1 << 33) * 300
+	PCRFreq = 27e6 // Hz
+)
 
 func decodePCR(a []byte) (PCR, error) {
 	b := uint(a[0])<<24 | uint(a[1])<<16 | uint(a[2])<<8 | uint(a[3])
@@ -77,9 +84,34 @@ func decodePCR(a []byte) (PCR, error) {
 	return PCR(base*300 + uint64(ext)), nil
 }
 
+func encodePCR(a []byte, pcr PCR) {
+	if uint64(pcr) > PCRMod {
+		panic("bad PCR value")
+	}
+	base := pcr / 300
+	ext := pcr - base*300
+	a[0] = byte(base >> 25)
+	a[1] = byte(base >> 17)
+	a[2] = byte(base >> 9)
+	a[3] = byte(base >> 1)
+	a[4] = byte(base<<7) | a[4]&0x7e | byte(ext>>8)
+	a[5] = byte(ext)
+}
+
 // Nanosec returns (c * 1000 + 13) / 27
 func (c PCR) Nanosec() time.Duration {
 	return time.Duration(c*1000+13) / 27
+}
+
+func (c PCR) Add(ns time.Duration) PCR {
+	c += PCR(ns*27+500) / 1000
+	for c < 0 {
+		c += PCRMod
+	}
+	for c > PCRMod {
+		c -= PCRMod
+	}
+	return c
 }
 
 // PCR returns value of PCR in a. It returns PCR == -1 and not nil
@@ -93,6 +125,18 @@ func (a AF) PCR() (PCR, error) {
 		return -1, ErrAFTooShort
 	}
 	return decodePCR(a[end-6 : end])
+}
+
+func (a AF) SetPCR(pcr PCR) error {
+	if !a.Flags().ContainsPCR() {
+		return ErrNotInAF
+	}
+	end := 1 + 6
+	if len(a) < end {
+		return ErrAFTooShort
+	}
+	encodePCR(a[end-6:end], pcr)
+	return nil
 }
 
 // OPCR returns value of OPCR in a. It returns OPCR == -1 and not nil
