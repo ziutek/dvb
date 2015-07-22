@@ -200,6 +200,9 @@ func decodeCodeRate(b byte) dvb.CodeRate {
 		return dvb.FEC56
 	case 4:
 		return dvb.FEC78
+	case 5, 6:
+		return dvb.FECAuto
+
 	}
 	return dvb.FECNone
 }
@@ -243,11 +246,11 @@ func ParseTerrestrialDeliverySystemDescriptor(d Descriptor) (tds TerrestrialDeli
 		return
 	}
 	tds.CodeRateHP = decodeCodeRate(data[5] & 0x07)
-	if tds.CodeRateHP == dvb.FECNone {
+	if tds.CodeRateHP == dvb.FECAuto || tds.CodeRateHP == dvb.FECNone {
 		return
 	}
 	tds.CodeRateLP = decodeCodeRate(data[6] >> 5)
-	if tds.CodeRateLP == dvb.FECNone {
+	if tds.CodeRateLP == dvb.FECAuto {
 		return
 	}
 	tds.Guard = dvb.Guard((data[6] >> 3) & 0x03)
