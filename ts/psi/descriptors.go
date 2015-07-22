@@ -188,11 +188,14 @@ type TerrestrialDeliverySystemDescriptor struct {
 	OtherFreq     bool
 }
 
-func codeRate(cr byte) dvb.CodeRate {
-	if cr < 3 {
-		return dvb.CodeRate(cr + 1)
-	}
-	switch cr {
+func decodeCodeRate(b byte) dvb.CodeRate {
+	switch b {
+	case 0:
+		return dvb.FEC12
+	case 1:
+		return dvb.FEC23
+	case 2:
+		return dvb.FEC34
 	case 3:
 		return dvb.FEC56
 	case 4:
@@ -239,11 +242,11 @@ func ParseTerrestrialDeliverySystemDescriptor(d Descriptor) (tds TerrestrialDeli
 	if tds.Hierarchy > dvb.Hierarchy4 {
 		return
 	}
-	tds.CodeRateHP = codeRate(data[5] & 0x07)
+	tds.CodeRateHP = decodeCodeRate(data[5] & 0x07)
 	if tds.CodeRateHP == dvb.FECNone {
 		return
 	}
-	tds.CodeRateLP = codeRate(data[6] >> 5)
+	tds.CodeRateLP = decodeCodeRate(data[6] >> 5)
 	if tds.CodeRateLP == dvb.FECNone {
 		return
 	}
@@ -257,7 +260,23 @@ func ParseTerrestrialDeliverySystemDescriptor(d Descriptor) (tds TerrestrialDeli
 	return
 }
 
-func (tds *TerrestrialDeliverySystemDescriptor) Make() Descriptor {
+func encodeCodeRate(fec dvb.CodeRate) byte {
+	switch fec {
+	case dvb.FEC12:
+		return 0
+	case dvb.FEC23:
+		return 1
+	case dvb.FEC34:
+		return 2
+	case dvb.FEC56:
+		return 3
+	case dvb.FEC78:
+		return 4
+	}
+	return 7
+}
+
+func (tds TerrestrialDeliverySystemDescriptor) Make() Descriptor {
 	d := MakeDescriptor(TerrestrialDeliverySystemTag, 11)
 	data := d.Data()
 	encodeU32(data[0:4], uint32((tds.Freq+5)/10))
@@ -274,10 +293,10 @@ func (tds *TerrestrialDeliverySystemDescriptor) Make() Descriptor {
 	default: // Unknown
 		b = 7 << 5
 	}
-	if tds.HighPrio {
+	if tds.HighPrio || tds.Hierarchy == dvb.HierarchyNone {
 		b |= 0x10
 	}
-	if tds.TimeSlicing {
+	if !tds.TimeSlicing {
 		b |= 0x08
 	}
 	if !tds.MPEFEC {
@@ -296,9 +315,9 @@ func (tds *TerrestrialDeliverySystemDescriptor) Make() Descriptor {
 		b = 3 << 6
 	}
 	b |= byte(tds.Hierarchy&0x07) << 3
-	b |= byte(tds.CodeRateHP & 0x07)
+	b |= encodeCodeRate(tds.CodeRateHP)
 	data[5] = b
-	b = byte(tds.CodeRateLP&0x07) << 5
+	b = encodeCodeRate(tds.CodeRateLP) << 5
 	b |= byte(tds.Guard&0x03) << 3
 	b |= byte(tds.TxMode&0x03) << 1
 	if tds.OtherFreq {
