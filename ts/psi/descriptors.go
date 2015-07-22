@@ -479,3 +479,34 @@ func ParseStreamIdentifierDescriptor(d Descriptor) (sid StreamIdentifierDescript
 	}
 	return StreamIdentifierDescriptor(data[0]), true
 }
+
+type LogicalCannelDescriptor []byte
+
+func ParseLogicalCannelDescriptor(d Descriptor) (lcd LogicalCannelDescriptor, ok bool) {
+	if d.Tag() != LogicalCannelTag {
+		return
+	}
+	lcd = LogicalCannelDescriptor(d.Data())
+	ok = true
+	return
+}
+
+type LogicalChannelInfo struct {
+	Sid     uint16
+	LCN     int16
+	Visible bool
+}
+
+// Pop returns first LogicalChannelInfo from d. Remaining infos are returned in
+// rd. If there is no more infos to read len(rd) == 0. If an error occurs
+// rd = nil
+func (d LogicalCannelDescriptor) Pop() (lci LogicalChannelInfo, rd LogicalCannelDescriptor) {
+	if len(d) < 4 {
+		return
+	}
+	lci.Sid = decodeU16(d[0:2])
+	lci.Visible = d[2]&0x80 != 0
+	lci.LCN = int16(decodeU16(d[2:4]) & 0x03ff)
+	rd = d[4:]
+	return
+}
