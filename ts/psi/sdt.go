@@ -172,6 +172,14 @@ func (si ServiceInfo) EITPresentFollowing() bool {
 	return si[2]&0x01 != 0
 }
 
+func (si ServiceInfo) SetEITPresentFollowing(b bool) {
+	if b {
+		si[2] |= 0x01
+	} else {
+		si[2] &^= 0x01
+	}
+}
+
 // Status returns the value of running_status field.
 func (si ServiceInfo) Status() ServiceStatus {
 	return ServiceStatus(si[3] >> 5)

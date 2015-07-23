@@ -118,10 +118,11 @@ func setLoopLen(b []byte, n int) {
 	if uint(n) > 0xfff {
 		panic("psi: Bad descriptors loop length to set")
 	}
-	b[0] = 0xf0 | byte(n>>8)
+	b[0] = b[0]&0xf0 | byte(n>>8)&0x0f
 	b[1] = byte(n)
 }
 
+// clearLopLen initializez first two bytes in b to 0xf0, 0x00.
 func clearLoopLen(b []byte) {
 	b[0] = 0xf0
 	b[1] = 0

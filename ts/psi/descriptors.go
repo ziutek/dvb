@@ -111,14 +111,6 @@ func ParseServiceDescriptor(d Descriptor) (sd ServiceDescriptor, ok bool) {
 	return
 }
 
-/*func (sd ServiceDescriptor) Append(dl *DescriptorList)  {
-	d := dl.Alloc(1 + 1 + len(sd.ProviderName) + 1 + len(sd.ServiceName)
-	d.SetTag(ServiceTag)
-	data := d.Data()
-	data[0] = len(sd.ProviderName)
-	copy(data[1:],
-}*/
-
 func MakeServiceDescriptor(typ ServiceType, provider, service string) Descriptor {
 	p := EncodeText(provider)
 	s := EncodeText(service)
@@ -171,6 +163,19 @@ func (d ServiceListDescriptor) Pop() (sid uint16, typ ServiceType, rd ServiceLis
 	typ = ServiceType(d[2])
 	rd = d[3:]
 	return
+}
+
+func (sld *ServiceListDescriptor) Append(sid uint16, typ ServiceType) {
+	var el [3]byte
+	encodeU16(el[0:2], sid)
+	el[2] = byte(typ)
+	*sld = append(*sld, el[:]...)
+}
+
+func (sld ServiceListDescriptor) MakeDescriptor() Descriptor {
+	d := MakeDescriptor(ServiceListTag, len(sld))
+	copy(d.Data(), sld)
+	return d
 }
 
 type TerrestrialDeliverySystemDescriptor struct {
@@ -279,7 +284,7 @@ func encodeCodeRate(fec dvb.CodeRate) byte {
 	return 7
 }
 
-func (tds TerrestrialDeliverySystemDescriptor) Make() Descriptor {
+func (tds TerrestrialDeliverySystemDescriptor) MakeDescriptor() Descriptor {
 	d := MakeDescriptor(TerrestrialDeliverySystemTag, 11)
 	data := d.Data()
 	encodeU32(data[0:4], uint32((tds.Freq+5)/10))
@@ -492,9 +497,9 @@ func ParseLogicalCannelDescriptor(d Descriptor) (lcd LogicalCannelDescriptor, ok
 }
 
 type LogicalChannelInfo struct {
-	Sid     uint16
-	LCN     int16
-	Visible bool
+	Sid     uint16 // Program Id
+	LCN     int16  // Logical Channel Number
+	Visible bool   // Should be visible on program list?
 }
 
 // Pop returns first LogicalChannelInfo from d. Remaining infos are returned in
@@ -509,4 +514,38 @@ func (d LogicalCannelDescriptor) Pop() (lci LogicalChannelInfo, rd LogicalCannel
 	lci.LCN = int16(decodeU16(d[2:4]) & 0x03ff)
 	rd = d[4:]
 	return
+}
+
+func (lcd *LogicalCannelDescriptor) Append(lci LogicalChannelInfo) {
+	var el [4]byte
+	encodeU16(el[0:2], lci.Sid)
+	encodeU16(el[2:4], uint16(lci.LCN)|0xc000) // 0xfc00
+	if !lci.Visible {
+		el[2] &^= 0x80
+	}
+	*lcd = append(*lcd, el[:]...)
+}
+
+func (lcd LogicalCannelDescriptor) MakeDescriptor() Descriptor {
+	d := MakeDescriptor(LogicalCannelTag, len(lcd))
+	copy(d.Data(), lcd)
+	return d
+}
+
+func ParsePrivateDataSpecifier(d Descriptor) (pds uint32, ok bool) {
+	if d.Tag() != PrivateDataSpecifierTag {
+		return
+	}
+	data := d.Data()
+	if len(data) != 4 {
+		return
+	}
+	pds = decodeU32(data)
+	return
+}
+
+func MakePrivateDataSpecifierDescriptor(pds uint32) Descriptor {
+	d := MakeDescriptor(PrivateDataSpecifierTag, 4)
+	encodeU32(d.Data(), pds)
+	return d
 }
