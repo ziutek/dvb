@@ -122,6 +122,7 @@ func listenUDP(laddr string, pids []int16) ts.PktReader {
 	checkErr(err)
 	c, err := net.ListenUDP("udp", la)
 	checkErr(err)
+	checkErr(c.SetReadBuffer(2 * 1024 * 1024))
 	return &pidFilter{
 		r:    ts.NewPktPktReader(c, make([]byte, 7*ts.PktLen)),
 		pids: pids,

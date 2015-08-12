@@ -180,7 +180,7 @@ func (sld ServiceListDescriptor) MakeDescriptor() Descriptor {
 
 type TerrestrialDeliverySystemDescriptor struct {
 	Freq          int64 // center frequency [Hz]
-	Bandwidth     int32 // bandwidth [Hz]
+	Bandwidth     int   // bandwidth [Hz]
 	HighPrio      bool
 	TimeSlicing   bool
 	MPEFEC        bool
@@ -191,6 +191,57 @@ type TerrestrialDeliverySystemDescriptor struct {
 	Guard         dvb.Guard
 	TxMode        dvb.TxMode
 	OtherFreq     bool
+}
+
+func (tds TerrestrialDeliverySystemDescriptor) Bitrate() int64 {
+	bitrate := 54e6 * int64(tds.Bandwidth) / 8e6
+	switch tds.CodeRateHP {
+	case dvb.FEC12:
+		bitrate = bitrate * 1 / 2
+	case dvb.FEC23:
+		bitrate = bitrate * 2 / 3
+	case dvb.FEC34:
+		bitrate = bitrate * 3 / 4
+	case dvb.FEC45:
+		bitrate = bitrate * 4 / 5
+	case dvb.FEC56:
+		bitrate = bitrate * 5 / 6
+	case dvb.FEC67:
+		bitrate = bitrate * 6 / 7
+	case dvb.FEC78:
+		bitrate = bitrate * 7 / 8
+	default:
+		bitrate = 0
+	}
+	switch tds.Constellation {
+	case dvb.QPSK:
+		bitrate = bitrate * 2 / 8
+	case dvb.QAM16:
+		bitrate = bitrate * 4 / 8
+	case dvb.QAM32:
+		bitrate = bitrate * 5 / 8
+	case dvb.QAM64:
+		bitrate = bitrate * 6 / 8
+	case dvb.QAM128:
+		bitrate = bitrate * 7 / 8
+	case dvb.QAM256:
+		bitrate = bitrate * 8 / 8
+	default:
+		bitrate = 0
+	}
+	switch tds.Guard {
+	case dvb.Guard32:
+		bitrate = bitrate * 32 / 33
+	case dvb.Guard16:
+		bitrate = bitrate * 16 / 17
+	case dvb.Guard8:
+		bitrate = bitrate * 8 / 9
+	case dvb.Guard4:
+		bitrate = bitrate * 4 / 5
+	default:
+		bitrate = 0
+	}
+	return bitrate * 188 / 204
 }
 
 func decodeCodeRate(b byte) dvb.CodeRate {
@@ -519,7 +570,7 @@ func (d LogicalCannelDescriptor) Pop() (lci LogicalChannelInfo, rd LogicalCannel
 func (lcd *LogicalCannelDescriptor) Append(lci LogicalChannelInfo) {
 	var el [4]byte
 	encodeU16(el[0:2], lci.Sid)
-	encodeU16(el[2:4], uint16(lci.LCN)|0xc000) // 0xfc00
+	encodeU16(el[2:4], uint16(lci.LCN)|0xfc00)
 	if !lci.Visible {
 		el[2] &^= 0x80
 	}

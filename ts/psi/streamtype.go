@@ -3,7 +3,7 @@ package psi
 type StreamType byte
 
 const (
-	Reserved StreamType = iota
+	ZeroStreamType StreamType = iota
 	MPEG1Video
 	MPEG2Video
 	MPEG1Audio

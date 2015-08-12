@@ -70,6 +70,16 @@ func (q *PktReadQueue) ReplacePkt(pkt *ArrayPkt) (*ArrayPkt, error) {
 	return p, nil
 }
 
+// Cap returns capacity of q.
+func (q *PktReadQueue) Cap() int {
+	return cap(q.filled)
+}
+
+// Len returns number of packet queued in q.
+func (q *PktReadQueue) Len() int {
+	return len(q.filled)
+}
+
 // PacketWriteQueue represenst write part of PktQueue and implements PktReplacer
 // interface. If writer uses raw channels insteed of ReplacePkt method it
 // should read empty packet from Empty channel and next write filled packet
@@ -98,4 +108,14 @@ func (q *PktWriteQueue) ReplacePkt(pkt *ArrayPkt) (*ArrayPkt, error) {
 	p := <-q.empty
 	q.filled <- pkt
 	return p, nil
+}
+
+// Cap returns capacity of q.
+func (q *PktWriteQueue) Cap() int {
+	return cap(q.filled)
+}
+
+// Len returns number of packet queued in q.
+func (q *PktWriteQueue) Len() int {
+	return len(q.filled)
 }
