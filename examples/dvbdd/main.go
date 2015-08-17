@@ -50,7 +50,7 @@ func main() {
 	sr := flag.Uint("sr", 0, "symbol rate [kBd]")
 	pol := flag.String("pol", "h", "polarization: h, v")
 	count := flag.Uint64("count", 0, "number of MPEG-TS packets to process (0 means infinity)")
-	bw := flag.Uint("bw", 0, "bandwidth [MHz] (0 == auto)")
+	bw := flag.Int("bw", 0, "bandwidth [MHz] (0 == auto)")
 	flag.Usage = usage
 	flag.Parse()
 
@@ -72,7 +72,7 @@ func main() {
 
 	switch *src {
 	case "rf":
-		r = tune(*fpath, *dpath, *sys, *pol, uint64(*freq*1e6), uint64(*bw)*1e6, *sr, pids)
+		r = tune(*fpath, *dpath, *sys, *pol, int64(*freq*1e6), *bw*1e6, *sr, pids)
 	case "udp":
 		r = listenUDP(*laddr, pids)
 	default:
@@ -129,7 +129,7 @@ func listenUDP(laddr string, pids []int16) ts.PktReader {
 	}
 }
 
-func tune(fpath, dpath, sys, pol string, freqHz, bwHz uint64, sr uint, pids []int16) ts.PktReader {
+func tune(fpath, dpath, sys, pol string, freqHz int64, bwHz int, sr uint, pids []int16) ts.PktReader {
 	var polar rune
 	switch pol {
 	case "h", "v":
