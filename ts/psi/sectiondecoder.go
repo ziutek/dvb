@@ -9,6 +9,7 @@ var (
 	ErrSectionLength   = dvb.TemporaryError("incorrect value of section_length field")
 	ErrSectionPointer  = dvb.TemporaryError("incorrect pointer_field")
 	ErrSectionSpace    = dvb.TemporaryError("no free space for section decoding")
+	ErrSectionSyntax   = dvb.TemporaryError("section syntax indicator not set")
 	ErrSectionCRC      = dvb.TemporaryError("section has incorrect CRC")
 	ErrSectionReserved = dvb.TemporaryError("section has wrong value of header reserved bits")
 	ErrSectionData     = dvb.TemporaryError("too few data to decode section")
@@ -123,6 +124,9 @@ func (d *SectionDecoder) ReadSection(s Section) error {
 	if d.check {
 		if s.Reserved() != 3 {
 			return ErrSectionReserved
+		}
+		if !s.GenericSyntax() {
+			return ErrSectionSyntax
 		}
 		if !s.CheckCRC() {
 			return ErrSectionCRC
