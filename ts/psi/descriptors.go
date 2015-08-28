@@ -5,6 +5,11 @@ import (
 	"strconv"
 )
 
+// TODO: Reconsider all descriptors decoding/encoding code. Goals:
+// 1. Simple and orthogonal implementation.
+// 2. Avoid allocations.
+
+
 type ServiceType byte
 
 const (
