@@ -23,9 +23,7 @@ func (s Section) SetTableId(id byte) {
 
 // TableIdExt returns the value of table_id_extension
 func (s Section) TableIdExt() uint16 {
-	if !s.GenericSyntax() {
-		panic("GenericSyntax need for TableIdExt")
-	}
+	s.checkGenericSyntax()
 	return decodeU16(s[3:5])
 }
 
@@ -99,11 +97,15 @@ func (s Section) setLen(n int) {
 	s[2] = byte(n)
 }
 
+func (s Section) checkGenericSyntax() {
+	if !s.GenericSyntax() {
+		panic("psi: GenericSyntax required")
+	}
+}
+
 // Version returns the value of version_number field.
 func (s Section) Version() int8 {
-	if !s.GenericSyntax() {
-		panic("psi: GenericSyntax need for Version")
-	}
+	s.checkGenericSyntax()
 	return int8(s[5]>>1) & 0x1f
 }
 
@@ -118,9 +120,7 @@ func (s Section) SetVersion(v int8) {
 
 // Current returns the value of current_next_indicator field
 func (s Section) Current() bool {
-	if !s.GenericSyntax() {
-		panic("psi: GenericSyntax need for Current")
-	}
+	s.checkGenericSyntax()
 	return s[5]&0x01 != 0
 }
 
@@ -135,9 +135,7 @@ func (s Section) SetCurrent(c bool) {
 
 // Number returns the value of section_number field
 func (s Section) Number() byte {
-	if !s.GenericSyntax() {
-		panic("psi: GenericSyntax need for Number")
-	}
+	s.checkGenericSyntax()
 	return s[6]
 }
 
@@ -148,9 +146,7 @@ func (s Section) SetNumber(n byte) {
 
 // LastNumber returns the value of last_section_number field
 func (s Section) LastNumber() byte {
-	if !s.GenericSyntax() {
-		panic("psi: GenericSyntax need for LastNumber")
-	}
+	s.checkGenericSyntax()
 	return s[7]
 }
 
@@ -176,9 +172,7 @@ func (s Section) Data() []byte {
 // CheckCRC returns true if s.Len() is valid and CRC32 of whole
 // section is correct
 func (s Section) CheckCRC() bool {
-	if !s.GenericSyntax() {
-		panic("psi: GenericSyntax need for CheckCRC")
-	}
+	s.checkGenericSyntax()
 	l := s.Len()
 	if l < 4 || len(s) < l {
 		return false
@@ -189,9 +183,7 @@ func (s Section) CheckCRC() bool {
 
 // MakeCRC calculates CRC32 for whole section and uses it to set CRC_32 field
 func (s Section) MakeCRC() {
-	if !s.GenericSyntax() {
-		panic("psi: GenericSyntax need for MakeCRC")
-	}
+	s.checkGenericSyntax()
 	l := s.Len()
 	if l < 4 || len(s) < l {
 		panic("psi: bad section length to calculate CRC sum")

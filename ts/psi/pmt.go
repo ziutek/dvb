@@ -18,6 +18,10 @@ func (p PMT) Current() bool {
 	return Section(p).Current()
 }
 
+func (p PMT) Len() int {
+	return Section(p).Len()
+}
+
 func (p PMT) MakeCRC() {
 	Section(p).MakeCRC()
 }

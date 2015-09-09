@@ -66,12 +66,12 @@ var (
 )
 
 // PCR contains the number of ticks of 27MHz generator. PCR generator counts
-// modulo PCRMod.
+// modulo PCRModulo.
 type PCR int64
 
 const (
-	PCRMod  = (1 << 33) * 300
-	PCRFreq = 27e6 // Hz
+	PCRModulo = (1 << 33) * 300
+	PCRFreq   = 27e6 // Hz
 )
 
 func decodePCR(a []byte) (PCR, error) {
@@ -85,7 +85,7 @@ func decodePCR(a []byte) (PCR, error) {
 }
 
 func encodePCR(a []byte, pcr PCR) {
-	if uint64(pcr) > PCRMod {
+	if uint64(pcr) >= PCRModulo {
 		panic("bad PCR value")
 	}
 	base := pcr / 300
@@ -106,10 +106,10 @@ func (c PCR) Nanosec() time.Duration {
 func (c PCR) Add(ns time.Duration) PCR {
 	c += PCR(ns*27+500) / 1000
 	for c < 0 {
-		c += PCRMod
+		c += PCRModulo
 	}
-	for c > PCRMod {
-		c -= PCRMod
+	for c > PCRModulo {
+		c -= PCRModulo
 	}
 	return c
 }
