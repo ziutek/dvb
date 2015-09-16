@@ -7,11 +7,7 @@ import (
 
 var ErrTOTSectionSyntax = dvb.TemporaryError("incorrect TOT section syntax")
 
-func ParseTOT(s Section, checkCRC bool) (utc time.Time, err error) {
-	if checkCRC && !s.CheckCRC() {
-		err = ErrSectionCRC
-		return
-	}
+func ParseTOT(s Section) (utc time.Time, err error) {
 	if s.TableId() != 0x73 || s.GenericSyntax() || s.Len() < 3+7+4 {
 		err = ErrTOTSectionSyntax
 		return
