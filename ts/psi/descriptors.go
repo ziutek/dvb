@@ -9,10 +9,10 @@ import (
 // 1. Simple and orthogonal implementation.
 // 2. Avoid allocations.
 
-
 type ServiceType byte
 
 const (
+	ZeroServiceType          = ServiceType(0x00)
 	DigitalTelevisionService = ServiceType(0x01)
 	DigitalRadioSoundService = ServiceType(0x02)
 	TeletextService          = ServiceType(0x03)

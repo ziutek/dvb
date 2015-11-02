@@ -34,7 +34,7 @@ const (
 )
 
 var streamTypes = []string{
-	"Reserved",
+	"ZeroStreamType",
 	"MPEG1Video",
 	"MPEG2Video",
 	"MPEG1Audio",
@@ -69,4 +69,13 @@ func (t StreamType) String() string {
 		return "unknown"
 	}
 	return streamTypes[t]
+}
+
+func ParseStreamType(s string) StreamType {
+	for i, t := range streamTypes {
+		if t == s {
+			return StreamType(i)
+		}
+	}
+	return ZeroStreamType
 }
