@@ -59,8 +59,8 @@ func (q *PktReadQueue) Filled() <-chan *ArrayPkt {
 	return q.filled
 }
 
-// ReplacePkt pass empty pkt to q and obtain filled packet from q. It returns
-// io.EOF error when queue was closed.
+// ReplacePkt obtains filled packet from q and next pass empty pkt to q.
+// It returns io.EOF error when queue was closed.
 func (q *PktReadQueue) ReplacePkt(pkt *ArrayPkt) (*ArrayPkt, error) {
 	p, ok := <-q.filled
 	if !ok {
@@ -102,8 +102,8 @@ func (q *PktWriteQueue) Close() {
 	close(q.filled)
 }
 
-// ReplacePkt obtain empty packet from q and pass pkt to q. It always return
-// nil error.
+// ReplacePkt obtains empty packet from q and next pass pkt to q. It always
+// returns nil error.
 func (q *PktWriteQueue) ReplacePkt(pkt *ArrayPkt) (*ArrayPkt, error) {
 	p := <-q.empty
 	q.filled <- pkt
