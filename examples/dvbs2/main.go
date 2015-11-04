@@ -59,7 +59,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	freq, err := strconv.ParseUint(args[0], 0, 32)
+	freq, err := strconv.ParseInt(args[0], 0, 64)
 	checkErr(err)
 	freq *= 1e6
 
@@ -118,7 +118,7 @@ func main() {
 	fmt.Fprintln(os.Stderr, "tuned!")
 
 	dmx := demux.Device(filepath.Join(*adapterPath, *demuxPath))
-	f, err := dmx.StreamFilter(
+	f, err := dmx.NewStreamFilter(
 		&demux.StreamFilterParam{
 			Pid:  pids[0],
 			In:   demux.InFrontend,

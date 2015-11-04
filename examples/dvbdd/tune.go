@@ -80,7 +80,7 @@ func tune(fpath, dmxpath, dvrpath, sys, pol string, freqHz int64, bwHz int, sr u
 	checkErr(fe.Tune())
 	checkErr(waitForTune(fe))
 
-	var filterParam = demux.StreamFilterParam{
+	filterParam := demux.StreamFilterParam{
 		Pid:  pids[0],
 		In:   demux.InFrontend,
 		Out:  demux.OutTSDemuxTap,
@@ -89,7 +89,7 @@ func tune(fpath, dmxpath, dvrpath, sys, pol string, freqHz int64, bwHz int, sr u
 	if dvrpath != "" {
 		filterParam.Out = demux.OutTSTap
 	}
-	filter, err = demux.Device(dmxpath).StreamFilter(&filterParam)
+	filter, err = demux.Device(dmxpath).NewStreamFilter(&filterParam)
 	checkErr(err)
 	for _, pid := range pids[1:] {
 		checkErr(filter.AddPid(pid))

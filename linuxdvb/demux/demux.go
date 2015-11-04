@@ -180,7 +180,7 @@ type SectionFilter struct {
 type Device string
 
 // Returns a handler to elementary stream filter.
-func (d Device) StreamFilter(p *StreamFilterParam) (f StreamFilter, err error) {
+func (d Device) NewStreamFilter(p *StreamFilterParam) (f StreamFilter, err error) {
 	f.file, err = os.Open(string(d))
 	if err != nil {
 		return
@@ -198,7 +198,7 @@ func (d Device) StreamFilter(p *StreamFilterParam) (f StreamFilter, err error) {
 }
 
 // Returns a handler to section filter.
-func (d Device) SectionFilter(p *SectionFilterParam) (f SectionFilter, err error) {
+func (d Device) NewSectionFilter(p *SectionFilterParam) (f SectionFilter, err error) {
 	f.file, err = os.Open(string(d))
 	if err != nil {
 		return

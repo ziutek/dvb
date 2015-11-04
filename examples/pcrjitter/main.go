@@ -173,7 +173,7 @@ func main() {
 		Out:  demux.OutTSTap,
 		Type: demux.Other,
 	}
-	filter, err := dmx.StreamFilter(&filterParam)
+	filter, err := dmx.NewStreamFilter(&filterParam)
 	checkErr(err)
 	checkErr(filter.Start())
 

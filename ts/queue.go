@@ -43,7 +43,7 @@ func (q *PktQueue) WritePart() *PktWriteQueue {
 	return (*PktWriteQueue)(q)
 }
 
-// PacketReadQueue represenst read part of PktQueue and implements PktReplacer
+// PktReadQueue represenst read part of PktQueue and implements PktReplacer
 // interface. If reader uses raw channels insteed of ReplacePkt method it
 // should first read filled packet from the Filled channel and next write
 // empty packet to the Empty channel.
@@ -80,7 +80,7 @@ func (q *PktReadQueue) Len() int {
 	return len(q.filled)
 }
 
-// PacketWriteQueue represenst write part of PktQueue and implements PktReplacer
+// PktWriteQueue represenst write part of PktQueue and implements PktReplacer
 // interface. If writer uses raw channels insteed of ReplacePkt method it
 // should read empty packet from Empty channel and next write filled packet
 // to Filled channel.
