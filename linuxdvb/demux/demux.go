@@ -13,7 +13,13 @@ type Filter struct {
 }
 
 func (f Filter) Close() error {
-	return f.file.Close()
+	err := f.file.Close()
+	f.file = nil
+	return err
+}
+
+func (f Filter) Closed() bool {
+	return f.file == nil
 }
 
 func (f Filter) Read(buf []byte) (int, error) {
@@ -143,7 +149,7 @@ func (f StreamFilter) AddPid(pid int16) error {
 	return nil
 }
 
-func (f StreamFilter) RemovePid(pid int16) error {
+func (f StreamFilter) DelPid(pid int16) error {
 	_, _, e := syscall.Syscall(
 		syscall.SYS_IOCTL,
 		uintptr(f.file.Fd()),
