@@ -40,8 +40,8 @@ type Pkt interface {
 	// Direct access to options/flags
 	ContainsError() bool
 	SetContainsError(b bool)
-	PayloadStart() bool
-	SetPayloadStart(b bool)
+	PayloadUnitStart() bool
+	SetPayloadUnitStart(b bool)
 	Prio() bool
 	SetPrio(bool)
 	ScramblingCtrl() PktScramblingCtrl
@@ -68,13 +68,13 @@ func (f *PktFlags) SetContainsError(b bool) {
 	}
 }
 
-// PayloadStart returns true if payload_unit_start_indicator == 1
-func (f PktFlags) PayloadStart() bool {
+// PayloadUnitStart returns true if payload_unit_start_indicator == 1
+func (f PktFlags) PayloadUnitStart() bool {
 	return f&0x40 != 0
 }
 
-// SetPayloadStart sets payload_unit_start_indicator
-func (f *PktFlags) SetPayloadStart(b bool) {
+// SetPayloadUnitStart sets payload_unit_start_indicator
+func (f *PktFlags) SetPayloadUnitStart(b bool) {
 	if b {
 		*f |= 0x40
 	} else {

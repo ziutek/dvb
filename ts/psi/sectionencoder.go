@@ -67,13 +67,13 @@ func (e *SectionEncoder) WriteSection(s Section) error {
 	if e.offset > 0 {
 		// e.pkt contains some data from previous section
 		p := e.pkt.Payload()
-		if e.pkt.PayloadStart() || e.offset+2 >= len(p) {
+		if e.pkt.PayloadUnitStart() || e.offset+2 >= len(p) {
 			// Previous section starts and ends in this packet or there is no
 			// place for even one byte in it.
 			if err := e.Flush(); err != nil {
 				return err
 			}
-			e.pkt.SetPayloadStart(true) // section will start in new packet
+			e.pkt.SetPayloadUnitStart(true) // section will start in new packet
 			e.pkt.Payload()[0] = 0      // set pointer_field in new packet
 			e.offset++
 		} else {
@@ -81,7 +81,7 @@ func (e *SectionEncoder) WriteSection(s Section) error {
 			// packet.
 			copy(p[1:], p[:e.offset])   // move data to add pointer field
 			p[0] = byte(e.offset)       // set pointer_field
-			e.pkt.SetPayloadStart(true) // section starts in current packet
+			e.pkt.SetPayloadUnitStart(true) // section starts in current packet
 			e.offset++
 			n := copy(p[e.offset:], s)
 			s = s[n:]
@@ -94,7 +94,7 @@ func (e *SectionEncoder) WriteSection(s Section) error {
 		}
 	} else {
 		// e.pkt is empty.
-		e.pkt.SetPayloadStart(true) // section will start in e.pkt
+		e.pkt.SetPayloadUnitStart(true) // section will start in e.pkt
 		e.pkt.Payload()[0] = 0      // pointer_field
 		e.offset++
 	}

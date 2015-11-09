@@ -132,7 +132,7 @@ func main() {
 	for _, pid := range pids[1:] {
 		checkErr(f.AddPid(pid))
 	}
-	checkErr(f.SetBufferLen(1024 * ts.PktLen))
+	checkErr(f.SetBufferSize(1024 * ts.PktLen))
 	checkErr(f.Start())
 
 	r := ts.NewPktStreamReader(f)

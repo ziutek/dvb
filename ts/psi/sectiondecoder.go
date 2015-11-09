@@ -69,7 +69,7 @@ func (d *SectionDecoder) ReadSection(s Section) error {
 		if len(p) == 0 {
 			continue
 		}
-		if d.pkt.Flags().PayloadStart() {
+		if d.pkt.PayloadUnitStart() {
 			offset := int(p[0]) + 1
 			if offset >= len(p) {
 				return ErrSectionPointer
@@ -111,14 +111,14 @@ func (d *SectionDecoder) ReadSection(s Section) error {
 		}
 		d.buffered = true // d.pkt contains next packet
 		p = d.pkt.Payload()
-		if d.pkt.PayloadStart() {
+		if d.pkt.PayloadUnitStart() {
 			if len(p) > 0 {
 				p = p[1:] // skip pointer_field
 			}
 		}
 	}
 	// We read all needed data.
-	if d.buffered && !d.pkt.Flags().PayloadStart() {
+	if d.buffered && !d.pkt.PayloadUnitStart() {
 		d.buffered = false // d.pkt doesn't contain begining of next section.
 	}
 	if d.check {

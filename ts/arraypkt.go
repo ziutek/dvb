@@ -79,11 +79,11 @@ func (p *ArrayPkt) SetContainsError(b bool) {
 	}
 }
 
-func (p *ArrayPkt) PayloadStart() bool {
+func (p *ArrayPkt) PayloadUnitStart() bool {
 	return p[1]&0x40 != 0
 }
 
-func (p *ArrayPkt) SetPayloadStart(b bool) {
+func (p *ArrayPkt) SetPayloadUnitStart(b bool) {
 	if b {
 		p[1] |= 0x40
 	} else {

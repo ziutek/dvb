@@ -95,7 +95,7 @@ func tune(fpath, dmxpath, dvrpath, sys, pol string, freqHz int64, bwHz int, sr u
 		checkErr(filter.AddPid(pid))
 	}
 	if dvrpath == "" {
-		checkErr(filter.SetBufferLen(1024 * 188))
+		checkErr(filter.SetBufferSize(1024 * 188))
 		checkErr(filter.Start())
 		return ts.NewPktStreamReader(filter)
 	}

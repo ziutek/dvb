@@ -46,7 +46,7 @@ func (f Filter) Stop() error {
 	return nil
 }
 
-func (f Filter) SetBufferLen(n uint32) error {
+func (f Filter) SetBufferSize(n int) error {
 	_, _, e := syscall.Syscall(
 		syscall.SYS_IOCTL, uintptr(f.file.Fd()),
 		_DMX_SET_BUFFER_SIZE, uintptr(n),
@@ -219,4 +219,19 @@ func (d Device) NewSectionFilter(p *SectionFilterParam) (f SectionFilter, err er
 		err = e
 	}
 	return
+}
+
+type DVR struct {
+	*os.File
+}
+
+func (dvr DVR) SetBufferSize(n int) error {
+	_, _, e := syscall.Syscall(
+		syscall.SYS_IOCTL, uintptr(dvr.File.Fd()),
+		_DMX_SET_BUFFER_SIZE, uintptr(n),
+	)
+	if e != 0 {
+		return e
+	}
+	return nil
 }

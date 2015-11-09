@@ -112,11 +112,11 @@ func (p SlicePkt) SetContainsError(b bool) {
 	}
 }
 
-func (p SlicePkt) PayloadStart() bool {
+func (p SlicePkt) PayloadUnitStart() bool {
 	return p[1]&0x40 != 0
 }
 
-func (p SlicePkt) SetPayloadStart(b bool) {
+func (p SlicePkt) SetPayloadUnitStart(b bool) {
 	if b {
 		p[1] |= 0x40
 	} else {
