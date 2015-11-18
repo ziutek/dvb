@@ -169,6 +169,15 @@ func (s Section) Data() []byte {
 	return s[beg:end]
 }
 
+func (s Section) CRC() uint32 {
+	s.checkGenericSyntax()
+	l := s.Len()
+	if l < 4 {
+		panic("psi: bad section length to obtain CRC value")
+	}
+	return decodeU32(s[l-4 : l])
+}
+
 // CheckCRC returns true if s.Len() is valid and CRC32 of whole
 // section is correct
 func (s Section) CheckCRC() bool {
