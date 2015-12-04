@@ -48,16 +48,47 @@ func NewPktStreamReader(r io.Reader) *PktStreamReader {
 	return s
 }
 
+func readFull(r io.Reader, b []byte) error {
+	/*
+		for len(b) > 0 {
+			m, err := r.Read(b)
+			b = b[m:]
+			if err != nil {
+				switch e := err.(type) {
+				case syscall.Errno:
+					if e != syscall.EINTR {
+						return err
+					}
+				case *os.PathError:
+					if e.Err != syscall.EINTR {
+						return err
+					}
+				case *net.OpError:
+					if e.Err != syscall.EINTR {
+						return err
+					}
+				default:
+					return err
+				}
+				time.Sleep(time.Second)
+			}
+		}
+		return nil
+	*/
+	_, err := io.ReadFull(r, b)
+	return err
+}
+
 func (s *PktStreamReader) synchronize() (err error) {
 	b := s.syncBuf[:]
 	if s.sbStart == -1 {
 		// First try of synchronization - read full buffer (three packets)
-		_, err = io.ReadFull(s.r, b)
+		err = readFull(s.r, b)
 		s.sbStart = -2
 	} else {
 		// Subsequent try of synchronization - read next packet
 		copy(b, b[PktLen:])
-		_, err = io.ReadFull(s.r, b[2*PktLen:])
+		err = readFull(s.r, b[2*PktLen:])
 	}
 	if err != nil {
 		return
@@ -68,7 +99,7 @@ func (s *PktStreamReader) synchronize() (err error) {
 			// Sync point found
 			s.sbStart = 0
 			copy(b, b[i:])
-			_, err = io.ReadFull(s.r, b[len(b)-i:])
+			err = readFull(s.r, b[len(b)-i:])
 			return
 		}
 	}
@@ -100,7 +131,7 @@ func (s *PktStreamReader) ReadPkt(pkt Pkt) error {
 		return nil
 	}
 	// Read packet from io.Reader
-	if _, err := io.ReadFull(s.r, pkt.Bytes()); err != nil {
+	if err := readFull(s.r, pkt.Bytes()); err != nil {
 		return convertEoverflow(err)
 	}
 	if !pkt.SyncOK() {

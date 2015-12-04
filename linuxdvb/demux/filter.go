@@ -237,7 +237,6 @@ func (f *Filter) SetBufferSize(n int) error {
 }
 
 func (f *Filter) AddPid(pid int16) error {
-	return nil
 	if f.s != nil {
 		if err := f.s.WaitCmd(); err != nil {
 			return err
@@ -248,7 +247,6 @@ func (f *Filter) AddPid(pid int16) error {
 }
 
 func (f *Filter) DelPid(pid int16) error {
-	return nil
 	if f.s != nil {
 		if err := f.s.WaitCmd(); err != nil {
 			return err
