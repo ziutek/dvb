@@ -7,56 +7,6 @@ import (
 	"unsafe"
 )
 
-// Filter implements common functionality for all specific filters
-type Filter struct {
-	file *os.File
-}
-
-func (f Filter) Close() error {
-	err := f.file.Close()
-	f.file = nil
-	return err
-}
-
-func (f Filter) Closed() bool {
-	return f.file == nil
-}
-
-func (f Filter) Read(buf []byte) (int, error) {
-	return f.file.Read(buf)
-}
-
-func (f Filter) Start() error {
-	_, _, e := syscall.Syscall(
-		syscall.SYS_IOCTL, uintptr(f.file.Fd()), _DMX_START, 0,
-	)
-	if e != 0 {
-		return e
-	}
-	return nil
-}
-
-func (f Filter) Stop() error {
-	_, _, e := syscall.Syscall(
-		syscall.SYS_IOCTL, uintptr(f.file.Fd()), _DMX_STOP, 0,
-	)
-	if e != 0 {
-		return e
-	}
-	return nil
-}
-
-func (f Filter) SetBufferSize(n int) error {
-	_, _, e := syscall.Syscall(
-		syscall.SYS_IOCTL, uintptr(f.file.Fd()),
-		_DMX_SET_BUFFER_SIZE, uintptr(n),
-	)
-	if e != 0 {
-		return e
-	}
-	return nil
-}
-
 // Parameters for StreamFilter
 
 type Input uint32
@@ -133,33 +83,15 @@ type StreamFilterParam struct {
 
 // StreamFilter represents PES filter configured in Linux kernel
 type StreamFilter struct {
-	Filter
+	*Filter
 }
 
 func (f StreamFilter) AddPid(pid int16) error {
-	_, _, e := syscall.Syscall(
-		syscall.SYS_IOCTL,
-		uintptr(f.file.Fd()),
-		_DMX_ADD_PID,
-		uintptr(unsafe.Pointer(&pid)),
-	)
-	if e != 0 {
-		return e
-	}
-	return nil
+	return f.addPid(pid)
 }
 
 func (f StreamFilter) DelPid(pid int16) error {
-	_, _, e := syscall.Syscall(
-		syscall.SYS_IOCTL,
-		uintptr(f.file.Fd()),
-		_DMX_REMOVE_PID,
-		uintptr(unsafe.Pointer(&pid)),
-	)
-	if e != 0 {
-		return e
-	}
-	return nil
+	return f.delPid(pid)
 }
 
 // Parameters for SectionFilter
@@ -179,46 +111,22 @@ type SectionFilterParam struct {
 
 // SectionFilter represents filter configured in Linux kernel
 type SectionFilter struct {
-	Filter
+	*Filter
 }
 
 // Dev represents Linux DVB demux device
 type Device string
 
 // Returns a handler to elementary stream filter.
-func (d Device) NewStreamFilter(p *StreamFilterParam) (f StreamFilter, err error) {
-	f.file, err = os.Open(string(d))
-	if err != nil {
-		return
-	}
-	_, _, e := syscall.Syscall(
-		syscall.SYS_IOCTL,
-		uintptr(f.file.Fd()),
-		_DMX_SET_PES_FILTER,
-		uintptr(unsafe.Pointer(p)),
-	)
-	if e != 0 {
-		err = e
-	}
-	return
+func (d Device) NewStreamFilter(p *StreamFilterParam) (StreamFilter, error) {
+	f, err := newFilter(d, _DMX_SET_PES_FILTER, unsafe.Pointer(p), p.Out == OutTSTap)
+	return StreamFilter{f}, err
 }
 
 // Returns a handler to section filter.
-func (d Device) NewSectionFilter(p *SectionFilterParam) (f SectionFilter, err error) {
-	f.file, err = os.Open(string(d))
-	if err != nil {
-		return
-	}
-	_, _, e := syscall.Syscall(
-		syscall.SYS_IOCTL,
-		uintptr(f.file.Fd()),
-		_DMX_SET_FILTER,
-		uintptr(unsafe.Pointer(p)),
-	)
-	if e != 0 {
-		err = e
-	}
-	return
+func (d Device) NewSectionFilter(p *SectionFilterParam) (SectionFilter, error) {
+	f, err := newFilter(d, _DMX_SET_FILTER, unsafe.Pointer(p), false)
+	return SectionFilter{f}, err
 }
 
 type DVR struct {
