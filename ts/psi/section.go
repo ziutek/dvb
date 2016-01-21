@@ -21,17 +21,6 @@ func (s Section) SetTableId(id byte) {
 	s[0] = id
 }
 
-// TableIdExt returns the value of table_id_extension
-func (s Section) TableIdExt() uint16 {
-	s.checkGenericSyntax()
-	return decodeU16(s[3:5])
-}
-
-// Set TableIdExt sets the value of table_id_extension
-func (s Section) SetTableIdExt(id uint16) {
-	encodeU16(s[3:5], id)
-}
-
 // GenericSyntax returns the value of section_syntax_indicator field
 func (s Section) GenericSyntax() bool {
 	return s[1]&0x80 != 0
@@ -101,6 +90,17 @@ func (s Section) checkGenericSyntax() {
 	if !s.GenericSyntax() {
 		panic("psi: GenericSyntax required")
 	}
+}
+
+// TableIdExt returns the value of table_id_extension
+func (s Section) TableIdExt() uint16 {
+	s.checkGenericSyntax()
+	return decodeU16(s[3:5])
+}
+
+// Set TableIdExt sets the value of table_id_extension
+func (s Section) SetTableIdExt(id uint16) {
+	encodeU16(s[3:5], id)
 }
 
 // Version returns the value of version_number field.
@@ -215,9 +215,17 @@ type SectionWriter interface {
 	WriteSection(s Section) error
 }
 
+// Reset resets section s to contain all bits set to 1.
+func (s Section) Reset() {
+	for i := range s {
+		s[i] = 0xff
+	}
+}
+
+// MakeEmptySection creates new empty, reseted section. 
 func MakeEmptySection(maxLen int, genericSyntax bool) Section {
 	s := make(Section, maxLen)
-	s[1] = 0x30 // Reseved bits.
+	s.Reset()
 	s.SetGenericSyntax(genericSyntax)
 	s.SetEmpty()
 	return s
@@ -241,7 +249,7 @@ func (s Section) Alloc(n, m int) []byte {
 	return s[b:e]
 }
 
-// SetEmpty initializes section lenght, so s becomes empty. SetEmpty
+// SetEmpty initializes section lenght, so s becomes empty. SetEmpty
 // invalidates CRC sum. Use MakeCRC to recalculate it.
 func (s Section) SetEmpty() {
 	n := 3

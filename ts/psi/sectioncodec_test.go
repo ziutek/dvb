@@ -27,20 +27,24 @@ func TestCodec(t *testing.T) {
 }
 
 func source(t *testing.T, q *ts.PktWriteQueue) {
-	s := make(psi.Section, psi.ISOSectionMaxLen)
-	for i := range s[:7-1-4] {
-		s[i] = byte(i)
-	}
-	s.SetReserved(3)
+	s := psi.MakeEmptySection(psi.ISOSectionMaxLen, true)
+	s.SetTableId(79)
+	s.SetTableIdExt(333)
+	s.SetVersion(3)
+	s.SetCurrent(true)
+	s.SetNumber(1)
+	s.SetLastNumber(1)
 	e := psi.NewSectionEncoder(q, 0x321)
-
-	for l := 7; l < psi.ISOSectionMaxLen; l++ {
-		s[l-1-4] = byte(l - 1 - 4)
-		s.SetLen(l)
+	for n := 4000; n > 0; n-- {
+		buf := s.Alloc(n, n)
+		for i := range buf {
+			buf[i] = byte(n + i)
+		}
 		s.MakeCRC()
 		if err := e.WriteSection(s); err != nil {
 			t.Fatal(err)
 		}
+		s.SetEmpty()
 	}
 	if err := e.Flush(); err != nil {
 		t.Fatal(err)
