@@ -9,13 +9,13 @@ type PktQueue struct {
 	empty, filled chan *ArrayPkt
 }
 
-// NewPktQueue creates new queue with internall buffer of size length packets.
-func NewPktQueue(length int) *PktQueue {
+// NewPktQueue creates new queue with internall buffer of size n packets.
+func NewPktQueue(n int) *PktQueue {
 	q := &PktQueue{
-		empty:  make(chan *ArrayPkt, length),
-		filled: make(chan *ArrayPkt, length),
+		empty:  make(chan *ArrayPkt, n),
+		filled: make(chan *ArrayPkt, n),
 	}
-	for i := 0; i < length; i++ {
+	for i := 0; i < n; i++ {
 		q.empty <- new(ArrayPkt)
 	}
 	return q
@@ -26,7 +26,7 @@ func (q *PktQueue) Cap() int {
 	return cap(q.filled)
 }
 
-// Len returns number of packet queued in q.
+// Len returns number of packets queued in q.
 func (q *PktQueue) Len() int {
 	return len(q.filled)
 }
@@ -60,7 +60,8 @@ func (q *PktReadQueue) Filled() <-chan *ArrayPkt {
 }
 
 // ReplacePkt obtains filled packet from q and next pass empty pkt to q.
-// It returns io.EOF error when queue was closed.
+// It returns io.EOF error when queue was closed and there is no more
+// packets to read.
 func (q *PktReadQueue) ReplacePkt(pkt *ArrayPkt) (*ArrayPkt, error) {
 	p, ok := <-q.filled
 	if !ok {
@@ -75,7 +76,7 @@ func (q *PktReadQueue) Cap() int {
 	return cap(q.filled)
 }
 
-// Len returns number of packet queued in q.
+// Len returns number of packets queued in q.
 func (q *PktReadQueue) Len() int {
 	return len(q.filled)
 }
