@@ -140,7 +140,7 @@ const (
 	CellListTag                  DescriptorTag = 0x6c
 	CellFrequencyLinkTag         DescriptorTag = 0x6d
 	AnnouncementSupportTag       DescriptorTag = 0x6e
-	ApplicationSignalling        DescriptorTag = 0x6f //PMT
+	ApplicationSignallingTag     DescriptorTag = 0x6f //PMT
 
 	EnhancedAC3Tag DescriptorTag = 0x7a //PMT
 	DTSTag         DescriptorTag = 0x7b
@@ -148,3 +148,93 @@ const (
 
 	LogicalCannelTag DescriptorTag = 0x83 //NIT
 )
+
+var dtagstr = [...]string{
+	VideoStreamTag:                "VideoStream",
+	AudioStreamTag:                "AudioStream",
+	HierarchyTag:                  "Hierarchy",
+	RegistrationTag:               "Registration",
+	DataStreamAlignmentTag:        "DataStreamAlignment",
+	TargetBackgroundGridTag:       "TargetBackgroundGrid",
+	VideoWindowTag:                "VideoWindow",
+	CATag:                         "CA",
+	ISO639LangTag:                 "ISO639Lang",
+	SystemClockTag:                "SystemClock",
+	MultiplexBufferUtilizationTag: "MultiplexBufferUtilization",
+	CopyrightTag:                  "Copyright",
+	MaximumBitrateTag:             "MaximumBitrate",
+	PrivateDataIndicatorTag:       "PrivateDataIndicator",
+	SmoothingBufferTag:            "SmoothingBuffer",
+	STDTag:                        "STD",
+	IBPTag:                        "IBP",
+
+	MPEG4VideoTag:      "MPEG4Video",
+	MPEG4AudioTag:      "MPEG4Audio",
+	IODTag:             "IOD",
+	SLTag:              "SL",
+	FMCTag:             "FMC",
+	ExternalESIDTag:    "ExternalESID",
+	MuxCodeTag:         "MuxCode",
+	FmxBufferSizeTag:   "FmxBufferSize",
+	MultiplexBufferTag: "MultiplexBuffer",
+
+	NetworkNameTag:               "NetworkName",
+	ServiceListTag:               "ServiceList",
+	StuffingTag:                  "Stuffing",
+	SatelliteDeliverySystemTag:   "SatelliteDeliverySystem",
+	CableDeliverySystemTag:       "CableDeliverySystem",
+	BouquetNameTag:               "BouquetName",
+	ServiceTag:                   "Service",
+	CountryAvailabilityTag:       "CountryAvailability",
+	LinkageTag:                   "Linkage",
+	NVODReferenceTag:             "NVODReference",
+	TimeShiftedServiceTag:        "TimeShiftedService",
+	ShortEventTag:                "ShortEvent",
+	ExtendedEventTag:             "ExtendedEvent",
+	TimeShiftedEventTag:          "TimeShiftedEvent",
+	ComponentTag:                 "Component",
+	MosaicTag:                    "Mosaic",
+	StreamIdentifierTag:          "StreamIdentifier",
+	CAIdentifierTag:              "CAIdentifier",
+	ContentTag:                   "Content",
+	ParentalRatingTag:            "ParentalRating",
+	TeletextTag:                  "Teletext",
+	TelephoneTag:                 "Telephone",
+	LocalTimeOffsetTag:           "LocalTimeOffset",
+	SubtitlingTag:                "Subtitling",
+	TerrestrialDeliverySystemTag: "TerrestrialDeliverySystem",
+	MultilingualNetworkNameTag:   "MultilingualNetworkName",
+	MultilingualBouquetNameTag:   "MultilingualBouquetName",
+	MultilingualServiceNameTag:   "MultilingualServiceName",
+	MultilingualComponentTag:     "MultilingualComponent",
+	PrivateDataSpecifierTag:      "PrivateDataSpecifier",
+	ServiceMoveTag:               "ServiceMove",
+	ShortSmoothingBufferTag:      "ShortSmoothingBuffer",
+	FrequencyListTag:             "FrequencyList",
+	PartialTransportStreamTag:    "PartialTransportStream",
+	DataBroadcastTag:             "DataBroadcast",
+	CASystemTag:                  "CASystem",
+	DataBroadcastIdTag:           "DataBroadcastId",
+	TransportStreamTag:           "TransportStream",
+	DSNGTag:                      "DSNG",
+	PDCTag:                       "PDC",
+	AC3Tag:                       "AC3",
+	AncillaryDataTag:             "AncillaryData",
+	CellListTag:                  "CellList",
+	CellFrequencyLinkTag:         "CellFrequencyLink",
+	AnnouncementSupportTag:       "AnnouncementSupport",
+	ApplicationSignallingTag:     "ApplicationSignalling",
+
+	EnhancedAC3Tag: "EnhancedAC3",
+	DTSTag:         "DTS",
+	AACTag:         "AAC",
+
+	LogicalCannelTag: "LogicalCannel",
+}
+
+func (tag DescriptorTag) String() string {
+	if int(tag) >= len(dtagstr) {
+		return ""
+	}
+	return dtagstr[tag]
+}
