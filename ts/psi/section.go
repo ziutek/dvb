@@ -222,7 +222,7 @@ func (s Section) Reset() {
 	}
 }
 
-// MakeEmptySection creates new empty, reseted section. 
+// MakeEmptySection creates new empty, reseted section.
 func MakeEmptySection(maxLen int, genericSyntax bool) Section {
 	s := make(Section, maxLen)
 	s.Reset()
@@ -261,4 +261,13 @@ func (s Section) SetEmpty() {
 		n += 5 + 4
 	}
 	s.setLen(n)
+}
+
+// Copy copies content of sec to s (sec.Len() bytes are copied from sec to s).
+// It panics if len(s) < sec.Len().
+func (s Section) Copy(sec Section) {
+	if len(s) < sec.Len() {
+		panic("psi: can not copy section (size of dst too small)")
+	}
+	copy(s, sec[:sec.Len()])
 }
