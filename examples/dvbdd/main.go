@@ -25,11 +25,11 @@ func usage() {
 func main() {
 	src := flag.String(
 		"src", "rf",
-		"source: rf, udp",
+		"source: rf, udp, mcast",
 	)
 	laddr := flag.String(
 		"laddr", "0.0.0.0:1234",
-		"listen IP address and port",
+		"listen IP address and port or multicast GROUP:PORT@INTERFACE",
 	)
 	fpath := flag.String(
 		"front", "/dev/dvb/adapter0/frontend0",
@@ -105,6 +105,8 @@ func main() {
 		r = tune(*fpath, *dmxpath, *dvrpath, *sys, *pol, int64(*freq*1e6), int(*bw*1e6), *sr, pids)
 	case "udp":
 		r = listenUDP(*laddr, pids)
+	case "mcast":
+		r = listenMulticast(*laddr, pids)
 	default:
 		die("Unknown source: " + *src)
 	}
@@ -127,6 +129,25 @@ func listenUDP(laddr string, pids []int16) ts.PktReader {
 	la, err := net.ResolveUDPAddr("udp", laddr)
 	checkErr(err)
 	c, err := net.ListenUDP("udp", la)
+	checkErr(err)
+	checkErr(c.SetReadBuffer(2 * 1024 * 1024))
+	return &pidFilter{
+		r:    ts.NewPktPktReader(c, make([]byte, 7*ts.PktLen)),
+		pids: pids,
+	}
+}
+
+func listenMulticast(group string, pids []int16) ts.PktReader {
+	var interf string
+	if n := strings.IndexByte(group, '@'); n >= 0 {
+		interf = group[n+1:]
+		group = group[:n]
+	}
+	gaddr, err := net.ResolveUDPAddr("udp", group)
+	checkErr(err)
+	ifi, err := net.InterfaceByName(interf)
+	checkErr(err)
+	c, err := net.ListenMulticastUDP("udp", ifi, gaddr)
 	checkErr(err)
 	checkErr(c.SetReadBuffer(2 * 1024 * 1024))
 	return &pidFilter{
