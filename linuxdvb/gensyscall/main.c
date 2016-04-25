@@ -45,5 +45,10 @@ main() {
 	for (i = 0; i < sizeof(table) / sizeof(tuple); i++) {
 		printf("%s = 0x%08x\n", table[i].name, table[i].val);
 	}
+	struct dtv_property p;
+	printf(
+		"sizeof(dtv_property) = %d, sizeof(dtv_property.u) = %d\n",
+		sizeof(p), sizeof(p.u)
+	);
 	return 0;
 }

@@ -1,10 +1,12 @@
 package frontend
 
 import (
-	"github.com/ziutek/dvb"
+	"fmt"
 	"os"
 	"syscall"
 	"unsafe"
+
+	"github.com/ziutek/dvb"
 )
 
 type Device struct {
@@ -33,64 +35,74 @@ type cmd uint32
 
 // APIv5 properties
 const (
-	dtvUndefined cmd = iota
-	dtvTune
-	dtvClear
-	dtvFrequency
-	dtvModulation
-	dtvBandwidthHz
-	dtvInversion
-	dtvDiseqcMaster
-	dtvSymbolRate
-	dtvInnerFEC
-	dtvVoltage
-	dtvTone
-	dtvPilot
-	dtvRolloff
-	dtvDiseqcSlaveReply
-	dtvFeCapabilityCount
-	dtvFeCapability
-	dtvDeliverySystem
-	dtvISDBTPartialReception
-	dtvISDBTSoundBroadcasting
-	dtvISDBTSBSubchannelId
-	dtvISDBTSBSegmentIdx
-	dtvISDBTSBSegmentCount
-	dtvISDBTLayeraFEC
-	dtvISDBTLayeraModulation
-	dtvISDBTLayeraSegmentCount
-	dtvISDBTLayeraTimeInterleaving
-	dtvISDBTLayerbFEC
-	dtvISDBTLayerbModulation
-	dtvISDBTLayerbSegmentCount
-	dtvISDBTLayerbTimeInterleaving
-	dtvISDBTLayercFEC
-	dtvISDBTLayercModulation
-	dtvISDBTLayercSegmentCount
-	dtvISDBTLayercTimeInterleaving
-	dtvAPIVersion
-	dtvCodeRateHP
-	dtvCodeRateLP
-	dtvGuardInterval
-	dtvTransmissionMode
-	dtvHierarchy
-	dtvISDBTLayerEnabled
-	dtvISDBSTSId
-	dtvDVBT2PLPId
+	dtvUndefined                   cmd = 0
+	dtvTune                        cmd = 1
+	dtvClear                       cmd = 2
+	dtvFrequency                   cmd = 3
+	dtvModulation                  cmd = 4
+	dtvBandwidthHz                 cmd = 5
+	dtvInversion                   cmd = 6
+	dtvDiseqcMaster                cmd = 7
+	dtvSymbolRate                  cmd = 8
+	dtvInnerFEC                    cmd = 9
+	dtvVoltage                     cmd = 10
+	dtvTone                        cmd = 11
+	dtvPilot                       cmd = 12
+	dtvRolloff                     cmd = 13
+	dtvDiseqcSlaveReply            cmd = 14
+	dtvFeCapabilityCount           cmd = 15
+	dtvFeCapability                cmd = 16
+	dtvDeliverySystem              cmd = 17
+	dtvISDBTPartialReception       cmd = 18
+	dtvISDBTSoundBroadcasting      cmd = 19
+	dtvISDBTSBSubchannelId         cmd = 20
+	dtvISDBTSBSegmentIdx           cmd = 21
+	dtvISDBTSBSegmentCount         cmd = 22
+	dtvISDBTLayeraFEC              cmd = 23
+	dtvISDBTLayeraModulation       cmd = 24
+	dtvISDBTLayeraSegmentCount     cmd = 25
+	dtvISDBTLayeraTimeInterleaving cmd = 26
+	dtvISDBTLayerbFEC              cmd = 27
+	dtvISDBTLayerbModulation       cmd = 28
+	dtvISDBTLayerbSegmentCount     cmd = 29
+	dtvISDBTLayerbTimeInterleaving cmd = 30
+	dtvISDBTLayercFEC              cmd = 31
+	dtvISDBTLayercModulation       cmd = 32
+	dtvISDBTLayercSegmentCount     cmd = 33
+	dtvISDBTLayercTimeInterleaving cmd = 34
+	dtvAPIVersion                  cmd = 35
+	dtvCodeRateHP                  cmd = 36
+	dtvCodeRateLP                  cmd = 37
+	dtvGuardInterval               cmd = 38
+	dtvTransmissionMode            cmd = 39
+	dtvHierarchy                   cmd = 40
+	dtvISDBTLayerEnabled           cmd = 41
+	dtvISDBSTSId                   cmd = 42
+	dtvDVBT2PLPId                  cmd = 43
+	dtvEnumDelSys                  cmd = 44
+
+	dtvStatSignalStrength    cmd = 62
+	dtvStatCNR               cmd = 63
+	dtvStatPreErrorBitCount  cmd = 64
+	dtvStatPreTotalBitCount  cmd = 65
+	dtvStatPostErrorBitCount cmd = 66
+	dtvStatPostTotalBitCount cmd = 67
+	dtvStatErrorBlockCount   cmd = 68
+	dtvStatTotalBlockCount   cmd = 69
 )
 
 type property struct {
 	cmd      cmd
 	reserved [3]uint32
-	
+
 	// union
-	data     uint32
+	data         uint32
 	bufData      [28]byte
 	bufLen       uint32
 	bufReserved1 [3]uint32
-	bufReserved2 uintptr
+	bufReserved2 [unsafe.Sizeof(uintptr(0))]byte
 
-	result int
+	result int32
 }
 
 type properties struct {
@@ -412,4 +424,130 @@ func (d Device) SetHierarchy(h dvb.Hierarchy) error {
 	}
 	return nil
 
+}
+
+type Scale byte
+
+const (
+	ScaleNotAvailable Scale = iota
+	ScaleDecibel
+	ScaleRelative
+	ScaleCounter
+)
+
+var scaleStr = []string{"(unk)", "dB", "%", ""}
+
+func (s Scale) String() string {
+	if s > ScaleCounter {
+		return scaleStr[0]
+	}
+	return scaleStr[s]
+}
+
+type Param struct {
+	scale Scale
+	value int64
+}
+
+func (p Param) Scale() Scale {
+	return p.scale
+}
+
+func (p Param) Decibel() float64 {
+	return float64(p.value) * 0.001
+}
+
+func (p Param) Relative() float64 {
+	return float64(p.value) * 100 / 0xffff
+}
+
+func (p Param) Counter() uint64 {
+	return uint64(p.value)
+}
+
+func (p Param) Format(f fmt.State, _ rune) {
+	switch p.scale {
+	case ScaleDecibel:
+		fmt.Fprintf(f, "%.3f dB", p.Decibel())
+	case ScaleRelative:
+		fmt.Fprintf(f, "%.3f %%", p.Relative())
+	case ScaleCounter:
+		fmt.Fprintf(f, "%d", p.Counter())
+	default:
+		fmt.Fprintf(f, "0x%x", p.Counter())
+	}
+}
+
+type Stat struct {
+	Signal     []Param // Signal strength level at the analog part of the tuner or of the demod.
+	CNR        []Param // Signal to Noise ratio for the main carrier.
+	PreErrBit  []Param // Number of bit errors before FEC on the inner coding block (Viterbi, LDPC, ...).
+	PreTotBit  []Param // Number of bits received before the inner code block.
+	PostErrBit []Param // Number of bit errors after FEC done by inner code block (Viterbi, LDPC, ...).
+	PostTotBit []Param // Number of bits received after the inner coding.
+	ErrBlk     []Param // Number of block errors after the outer FEC (Reed-Solomon, ...).
+	TotBlk     []Param // Total number of blocks received.
+}
+
+type statProp struct {
+	cmd      cmd
+	reserved [3]uint32
+
+	// union
+	slen      byte
+	stat      [4][9]byte
+	reserved1 [11]byte
+	reserved2 [unsafe.Sizeof(uintptr(0))]byte
+
+	result int32
+}
+
+type statProps struct {
+	num   uint32
+	props *statProp
+}
+
+func getStateParam(p *statProp) []Param {
+	ret := make([]Param, p.slen)
+	for i := range ret {
+		stat := &p.stat[i]
+		ret[i].scale = Scale(stat[0])
+		val := (*[8]byte)(unsafe.Pointer(&ret[i].value))
+		copy(val[:], stat[1:])
+	}
+	return ret
+}
+
+func (d Device) Stat() (*Stat, error) {
+	p := [...]statProp{
+		{cmd: dtvStatSignalStrength},
+		{cmd: dtvStatCNR},
+		{cmd: dtvStatPreErrorBitCount},
+		{cmd: dtvStatPreTotalBitCount},
+		{cmd: dtvStatPostErrorBitCount},
+		{cmd: dtvStatPostTotalBitCount},
+		{cmd: dtvStatErrorBlockCount},
+		{cmd: dtvStatTotalBlockCount},
+	}
+	ps := statProps{uint32(len(p)), &p[0]}
+	_, _, e := syscall.Syscall(
+		syscall.SYS_IOCTL,
+		d.Fd(),
+		_FE_GET_PROPERTY,
+		uintptr(unsafe.Pointer(&ps)),
+	)
+	if e != 0 {
+		return nil, e
+	}
+	stat := &Stat{
+		Signal:     getStateParam(&p[0]),
+		CNR:        getStateParam(&p[1]),
+		PreErrBit:  getStateParam(&p[2]),
+		PreTotBit:  getStateParam(&p[3]),
+		PostErrBit: getStateParam(&p[4]),
+		PostTotBit: getStateParam(&p[5]),
+		ErrBlk:     getStateParam(&p[6]),
+		TotBlk:     getStateParam(&p[7]),
+	}
+	return stat, nil
 }

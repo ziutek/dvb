@@ -120,6 +120,11 @@ func main() {
 		} else {
 			log.Printf("sig: %d  snr: %d  ber: %d", sig, snr, ber)
 		}
+		s, err := fe.Stat()
+		checkErr(err)
+		log.Printf(
+			"Sig: %v  CNR: %v  PreIFEC: %v/%v bit/bit  PostIFEC: %v/%v bit/bit  PostOFEC %v/%v blk/blk\n\n",
+			s.Signal, s.CNR, s.PreErrBit, s.PreTotBit, s.PostErrBit, s.PostTotBit, s.ErrBlk, s.TotBlk)
 		time.Sleep(2 * time.Second)
 	}
 }
