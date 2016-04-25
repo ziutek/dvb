@@ -8,8 +8,13 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/ziutek/dvb/linuxdvb/demux"
+	"github.com/ziutek/dvb/linuxdvb/frontend"
 	"github.com/ziutek/dvb/ts"
+
+	"github.com/ziutek/dvb/examples/internal"
 )
 
 func usage() {
@@ -21,6 +26,11 @@ func usage() {
 	flag.PrintDefaults()
 	os.Exit(1)
 }
+
+var (
+	fe     frontend.Device
+	filter demux.StreamFilter
+)
 
 func main() {
 	src := flag.String(
@@ -98,11 +108,16 @@ func main() {
 		w = newOutputFile(*out)
 	}
 
-	var r ts.PktReader
-
+	var (
+		r   ts.PktReader
+		err error
+	)
 	switch *src {
 	case "rf":
-		r = tune(*fpath, *dmxpath, *dvrpath, *sys, *pol, int64(*freq*1e6), int(*bw*1e6), *sr, pids)
+		fe, err = internal.Tune(*fpath, *sys, *pol, int64(*freq*1e6), int(*bw*1e6), *sr)
+		checkErr(err)
+		checkErr(internal.WaitForTune(fe, time.Now().Add(5*time.Second), true))
+		r, filter = setFilter(*dmxpath, *dvrpath, pids)
 	case "udp":
 		r = listenUDP(*laddr, pids)
 	case "mcast":
