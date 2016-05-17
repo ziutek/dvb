@@ -146,7 +146,7 @@ const (
 	DTSTag         DescriptorTag = 0x7b
 	AACTag         DescriptorTag = 0x7c
 
-	LogicalCannelTag DescriptorTag = 0x83 //NIT
+	LogicalChannelTag DescriptorTag = 0x83 //NIT
 )
 
 var dtagstr = [...]string{
@@ -229,7 +229,7 @@ var dtagstr = [...]string{
 	DTSTag:         "DTS",
 	AACTag:         "AAC",
 
-	LogicalCannelTag: "LogicalCannel",
+	LogicalChannelTag: "LogicalChannel",
 }
 
 func (tag DescriptorTag) String() string {

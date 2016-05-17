@@ -1,8 +1,10 @@
 package psi
 
 import (
-	"github.com/ziutek/dvb"
 	"strconv"
+	"time"
+
+	"github.com/ziutek/dvb"
 )
 
 // TODO: Reconsider all descriptors decoding/encoding code. Goals:
@@ -541,15 +543,13 @@ func ParseStreamIdentifierDescriptor(d Descriptor) (sid StreamIdentifierDescript
 	return StreamIdentifierDescriptor(data[0]), true
 }
 
-type LogicalCannelDescriptor []byte
+type LogicalChannelDescriptor []byte
 
-func ParseLogicalCannelDescriptor(d Descriptor) (lcd LogicalCannelDescriptor, ok bool) {
-	if d.Tag() != LogicalCannelTag {
+func ParseLogicalChannelDescriptor(d Descriptor) (lcd LogicalChannelDescriptor, ok bool) {
+	if d.Tag() != LogicalChannelTag {
 		return
 	}
-	lcd = LogicalCannelDescriptor(d.Data())
-	ok = true
-	return
+	return LogicalChannelDescriptor(d.Data()), true
 }
 
 type LogicalChannelInfo struct {
@@ -560,8 +560,8 @@ type LogicalChannelInfo struct {
 
 // Pop returns first LogicalChannelInfo from d. Remaining infos are returned in
 // rd. If there is no more infos to read len(rd) == 0. If an error occurs
-// rd = nil
-func (d LogicalCannelDescriptor) Pop() (lci LogicalChannelInfo, rd LogicalCannelDescriptor) {
+// rd = nil.
+func (d LogicalChannelDescriptor) Pop() (lci LogicalChannelInfo, rd LogicalChannelDescriptor) {
 	if len(d) < 4 {
 		return
 	}
@@ -572,7 +572,7 @@ func (d LogicalCannelDescriptor) Pop() (lci LogicalChannelInfo, rd LogicalCannel
 	return
 }
 
-func (lcd *LogicalCannelDescriptor) Append(lci LogicalChannelInfo) {
+func (lcd *LogicalChannelDescriptor) Append(lci LogicalChannelInfo) {
 	var el [4]byte
 	encodeU16(el[0:2], lci.Sid)
 	encodeU16(el[2:4], uint16(lci.LCN)|0xfc00)
@@ -582,8 +582,8 @@ func (lcd *LogicalCannelDescriptor) Append(lci LogicalChannelInfo) {
 	*lcd = append(*lcd, el[:]...)
 }
 
-func (lcd LogicalCannelDescriptor) MakeDescriptor() Descriptor {
-	d := MakeDescriptor(LogicalCannelTag, len(lcd))
+func (lcd LogicalChannelDescriptor) MakeDescriptor() Descriptor {
+	d := MakeDescriptor(LogicalChannelTag, len(lcd))
 	copy(d.Data(), lcd)
 	return d
 }
@@ -603,5 +603,79 @@ func ParsePrivateDataSpecifier(d Descriptor) (pds uint32, ok bool) {
 func MakePrivateDataSpecifierDescriptor(pds uint32) Descriptor {
 	d := MakeDescriptor(PrivateDataSpecifierTag, 4)
 	encodeU32(d.Data(), pds)
+	return d
+}
+
+type LocalTimeOffsetDescriptor []byte
+
+func ParseLocalTimeOffsetDescriptor(d Descriptor) (tod LocalTimeOffsetDescriptor, ok bool) {
+	if d.Tag() != LocalTimeOffsetTag {
+		return
+	}
+	return LocalTimeOffsetDescriptor(d.Data()), true
+}
+
+type LocalTimeOffset struct {
+	Country      [3]byte   // ISO 3166 country identifier.
+	Region       byte      // Region number in the country (6-bit).
+	Offset       int       // Seconds east of UTC.
+	TimeOfChange time.Time // Date and time (UTC) when the next time change.
+	NextOffset   int       // Next offset (seconds east of UTC).
+}
+
+// Pop returns first LocalTimeOffset from d. Remaining offsets are returned in
+// rd. If there is no more data to read len(rd) == 0. If an error occurs
+// rd = nil.
+func (d LocalTimeOffsetDescriptor) Pop() (lto LocalTimeOffset, rd LocalTimeOffsetDescriptor) {
+	if len(d) < 13 {
+		rd = nil
+		return
+	}
+	rd = d[13:]
+	copy(lto.Country[:], d)
+	lto.Region = d[3] >> 2
+	neg := d[3]&1 != 0
+	lto.Offset = decodeBCD(d[4])*3600 + decodeBCD(d[5])*60
+	if neg {
+		lto.Offset = -lto.Offset
+	}
+	var err error
+	lto.TimeOfChange, err = decodeMJDUTC(d[6:11])
+	if err != nil {
+		rd = nil
+		return
+	}
+	lto.NextOffset = decodeBCD(d[11])*3600 + decodeBCD(d[12])*60
+	if neg {
+		lto.NextOffset = -lto.NextOffset
+	}
+	return
+}
+
+// MakeLocalTimeOffsetDescriptor makes descriptor suitable for n time offsets.
+func MakeLocalTimeOffsetDescriptor(n int) LocalTimeOffsetDescriptor {
+	return make(LocalTimeOffsetDescriptor, n*13)
+}
+
+// Update updates n-th time ofset in d.
+func (d LocalTimeOffsetDescriptor) Set(n int, lto LocalTimeOffset) {
+	buf := d[n*13 : (n+1)*13]
+	copy(buf[:3], lto.Country[:])
+	buf[3] = lto.Region<<2 | 2
+	if lto.Offset < 0 {
+		buf[3] |= 1
+	}
+	min := (lto.Offset + 30) / 60
+	buf[4] = encodeBCD(min / 60)
+	buf[5] = encodeBCD(min % 60)
+	encodeMJDUTC(buf[6:11], lto.TimeOfChange)
+	min = (lto.NextOffset + 30) / 60
+	buf[11] = encodeBCD(min / 60)
+	buf[12] = encodeBCD(min % 60)
+}
+
+func (lto LocalTimeOffsetDescriptor) MakeDescriptor() Descriptor {
+	d := MakeDescriptor(LocalTimeOffsetTag, len(lto))
+	copy(d.Data(), lto)
 	return d
 }
