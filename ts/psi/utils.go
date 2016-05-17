@@ -98,7 +98,6 @@ func encodeMJDUTC(b []byte, t time.Time) {
 	if len(b) != 5 {
 		panic("encodeMJDUTC with len(b) != 5")
 	}
-	t = t.UTC()
 	var l int
 	y, m, d := t.Date()
 	if m <= 2 {
