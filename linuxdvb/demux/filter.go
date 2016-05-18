@@ -16,7 +16,7 @@ func (s *fdset) Sys() *syscall.FdSet {
 func (s *fdset) Set(fd uintptr) {
 	bits := 8 * unsafe.Sizeof(s.Bits[0])
 	if fd >= bits*uintptr(len(s.Bits)) {
-		panic("fdset: fd value too big")
+		panic("fdset: fd out of range")
 	}
 	n := fd / bits
 	m := fd % bits
@@ -26,7 +26,7 @@ func (s *fdset) Set(fd uintptr) {
 func (s *fdset) IsSet(fd uintptr) bool {
 	bits := 8 * unsafe.Sizeof(s.Bits[0])
 	if fd >= bits*uintptr(len(s.Bits)) {
-		panic("fdset: fd value too big")
+		panic("fdset: fd out of range")
 	}
 	n := fd / bits
 	m := fd % bits
