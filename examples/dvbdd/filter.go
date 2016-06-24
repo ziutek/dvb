@@ -32,23 +32,3 @@ func setFilter(dmxpath, dvrpath string, pids []int16) (ts.PktReader, demux.Strea
 	checkErr(filter.Start())
 	return ts.NewPktStreamReader(dvr), filter
 }
-
-type pidFilter struct {
-	r    ts.PktReader
-	pids []int16
-}
-
-func (f *pidFilter) ReadPkt(pkt ts.Pkt) error {
-	for {
-		if err := f.r.ReadPkt(pkt); err != nil {
-			return err
-		}
-		pid := pkt.Pid()
-		// TODO: sort f.pids to use more effecitve search method.
-		for _, p := range f.pids {
-			if p == 8192 || p == pid {
-				return nil
-			}
-		}
-	}
-}

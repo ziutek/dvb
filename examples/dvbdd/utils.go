@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/ziutek/dvb"
-	"github.com/ziutek/dvb/ts"
 )
 
 func die(s string) {
@@ -15,7 +14,7 @@ func die(s string) {
 
 func checkErr(err error) {
 	if err != nil {
-		if err == dvb.ErrOverflow || err == ts.ErrSync {
+		if _, ok := err.(dvb.TemporaryError); ok {
 			return
 		}
 		die(err.Error())

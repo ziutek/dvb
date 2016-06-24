@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -119,9 +118,11 @@ func main() {
 		checkErr(internal.WaitForTune(fe, time.Now().Add(5*time.Second), true))
 		r, filter = setFilter(*dmxpath, *dvrpath, pids)
 	case "udp":
-		r = listenUDP(*laddr, pids)
+		r, err = internal.ListenUDP(*laddr, pids...)
+		checkErr(err)
 	case "mcast":
-		r = listenMulticast(*laddr, pids)
+		r, err = internal.ListenMulticastUDP(*laddr, pids...)
+		checkErr(err)
 	default:
 		die("Unknown source: " + *src)
 	}
@@ -137,36 +138,5 @@ func main() {
 	for n := *count; n != 0; n-- {
 		checkErr(r.ReadPkt(pkt))
 		checkErr(w.WritePkt(pkt))
-	}
-}
-
-func listenUDP(laddr string, pids []int16) ts.PktReader {
-	la, err := net.ResolveUDPAddr("udp", laddr)
-	checkErr(err)
-	c, err := net.ListenUDP("udp", la)
-	checkErr(err)
-	checkErr(c.SetReadBuffer(2 * 1024 * 1024))
-	return &pidFilter{
-		r:    ts.NewPktPktReader(c, make([]byte, 7*ts.PktLen)),
-		pids: pids,
-	}
-}
-
-func listenMulticast(group string, pids []int16) ts.PktReader {
-	var interf string
-	if n := strings.IndexByte(group, '@'); n >= 0 {
-		interf = group[n+1:]
-		group = group[:n]
-	}
-	gaddr, err := net.ResolveUDPAddr("udp", group)
-	checkErr(err)
-	ifi, err := net.InterfaceByName(interf)
-	checkErr(err)
-	c, err := net.ListenMulticastUDP("udp", ifi, gaddr)
-	checkErr(err)
-	checkErr(c.SetReadBuffer(2 * 1024 * 1024))
-	return &pidFilter{
-		r:    ts.NewPktPktReader(c, make([]byte, 7*ts.PktLen)),
-		pids: pids,
 	}
 }
