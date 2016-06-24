@@ -80,7 +80,7 @@ func main() {
 				}
 			}
 			fmt.Printf(
-				"%d \"%s\" \"%s\" '%v' %v %t %t/%t\n",
+				"%d \"%s\" \"%s\" \"%v\" %v %t %t/%t\n",
 				sid, provider, name, typ, status, scrambled, eitPF, eitSched,
 			)
 		}
