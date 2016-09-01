@@ -86,7 +86,7 @@ func main() {
 
 	fe, err := internal.Tune(*fpath, *sys, *pol, int64(*freq*1e6), int(*bw*1e6), *sr)
 	checkErr(err)
-	checkErr(internal.WaitForTune(fe, time.Now().Add(7*time.Second), true))
+	checkErr(internal.WaitForTune(fe, time.Now().Add(15*time.Second), true))
 
 	filterParam := demux.StreamFilterParam{
 		Pid:  pids[0],
