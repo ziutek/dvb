@@ -101,29 +101,62 @@ func main() {
 	checkErr(err)
 	checkErr(filter.Start())
 
-	hasublk := true
+	var rssi, snr, ber, ublk string
 	for {
 		fe3 := frontend.API3{fe}
-		sig, err := fe3.SignalStrength()
-		checkErr(err)
-		snr, err := fe3.SNR()
-		checkErr(err)
-		ber, err := fe3.BER()
-		checkErr(err)
-		var ublk uint32
-		if hasublk {
-			ublk, err = fe3.UncorrectedBlocks()
-			hasublk = (err == nil)
+		if rssi != "-" {
+			val, err := fe3.SignalStrength()
+			if err != nil {
+				if e, ok := err.(frontend.Error); ok && e.What == "rssi" {
+					rssi = "-"
+				} else {
+					die(err.Error())
+				}
+			} else {
+				rssi = strconv.FormatInt(int64(val), 10)
+			}
 		}
-		if hasublk {
-			log.Printf("sig: %d  snr: %d  ber: %d  ublk: %d", sig, snr, ber, ublk)
-		} else {
-			log.Printf("sig: %d  snr: %d  ber: %d", sig, snr, ber)
+		if snr != "-" {
+			val, err := fe3.SNR()
+			if err != nil {
+				if e, ok := err.(frontend.Error); ok && e.What == "snr" {
+					snr = "-"
+				} else {
+					die(err.Error())
+				}
+			} else {
+				snr = strconv.FormatInt(int64(val), 10)
+			}
 		}
+		if ber != "-" {
+			val, err := fe3.BER()
+			if err != nil {
+				if e, ok := err.(frontend.Error); ok && e.What == "ber" {
+					ber = "-"
+				} else {
+					die(err.Error())
+				}
+			} else {
+				ber = strconv.FormatInt(int64(val), 10)
+			}
+		}
+		if ublk != "-" {
+			val, err := fe3.UncorrectedBlocks()
+			if err != nil {
+				if e, ok := err.(frontend.Error); ok && e.What == "uncorrected_blocks" {
+					ublk = "-"
+				} else {
+					die(err.Error())
+				}
+			} else {
+				ublk = strconv.FormatUint(uint64(val), 10)
+			}
+		}
+		log.Printf("API3 RSSI: %s  SNR: %s  BER: %s  UBLK: %s", rssi, snr, ber, ublk)
 		s, err := fe.Stat()
 		checkErr(err)
 		log.Printf(
-			"Sig: %v  CNR: %v  PreIFEC: %v/%v bit/bit  PostIFEC: %v/%v bit/bit  PostOFEC %v/%v blk/blk\n\n",
+			"API5 Sig: %v  CNR: %v  PreIFEC: %v/%v bit/bit  PostIFEC: %v/%v bit/bit  PostOFEC %v/%v blk/blk\n",
 			s.Signal, s.CNR, s.PreErrBit, s.PreTotBit, s.PostErrBit, s.PostTotBit, s.ErrBlk, s.TotBlk)
 		time.Sleep(2 * time.Second)
 	}
