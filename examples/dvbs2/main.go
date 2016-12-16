@@ -75,7 +75,6 @@ func main() {
 
 	sr, err := strconv.ParseUint(args[2], 0, 32)
 	checkErr(err)
-	sr *= 1e3
 
 	args = args[3:]
 	pids := make([]int16, len(args))
@@ -95,7 +94,7 @@ func main() {
 	checkErr(fe.SetModulation(dvb.PSK8))
 	checkErr(fe.SetRolloff(dvb.RolloffAuto))
 	checkErr(fe.SetPilot(dvb.PilotAuto))
-	checkErr(fe.SetSymbolRate(uint32(sr)))
+	checkErr(fe.SetSymbolRate(uint32(sr * 1e3)))
 	checkErr(fe.SetInnerFEC(dvb.FECAuto))
 	checkErr(fe.SetInversion(dvb.InversionAuto))
 	ifreq, tone, volt := frontend.SecParam(freq, rune(polar))

@@ -9,7 +9,7 @@ import (
 	"github.com/ziutek/dvb/linuxdvb/frontend"
 )
 
-func Tune(fpath, sys, pol string, freqHz int64, bwHz int, sr uint) (fe frontend.Device, err error) {
+func Tune(fpath, sys, pol string, freqHz int64, bwHz int, srBd uint) (fe frontend.Device, err error) {
 	var polar rune
 	switch pol {
 	case "h", "v":
@@ -22,7 +22,6 @@ func Tune(fpath, sys, pol string, freqHz int64, bwHz int, sr uint) (fe frontend.
 	if err != nil {
 		return
 	}
-
 	switch sys {
 	case "t":
 		if err = fe.SetDeliverySystem(dvb.SysDVBT); err != nil {
@@ -79,7 +78,7 @@ func Tune(fpath, sys, pol string, freqHz int64, bwHz int, sr uint) (fe frontend.
 				return
 			}
 		}
-		if err = fe.SetSymbolRate(uint32(sr)); err != nil {
+		if err = fe.SetSymbolRate(uint32(srBd)); err != nil {
 			return
 		}
 		if err = fe.SetInnerFEC(dvb.FECAuto); err != nil {
@@ -119,7 +118,7 @@ func Tune(fpath, sys, pol string, freqHz int64, bwHz int, sr uint) (fe frontend.
 		if err = fe.SetInversion(dvb.InversionAuto); err != nil {
 			return
 		}
-		if err = fe.SetSymbolRate(uint32(sr)); err != nil {
+		if err = fe.SetSymbolRate(uint32(srBd)); err != nil {
 			return
 		}
 		if err = fe.SetInnerFEC(dvb.FECAuto); err != nil {
@@ -129,7 +128,6 @@ func Tune(fpath, sys, pol string, freqHz int64, bwHz int, sr uint) (fe frontend.
 		err = errors.New("unknown delivery system: " + sys)
 		return
 	}
-
 	err = fe.Tune()
 	return
 }

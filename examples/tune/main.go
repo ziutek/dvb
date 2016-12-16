@@ -84,7 +84,7 @@ func main() {
 		pids[i] = int16(pid)
 	}
 
-	fe, err := internal.Tune(*fpath, *sys, *pol, int64(*freq*1e6), int(*bw*1e6), *sr)
+	fe, err := internal.Tune(*fpath, *sys, *pol, int64(*freq*1e6), int(*bw*1e6), *sr*1e3)
 	checkErr(err)
 	checkErr(internal.WaitForTune(fe, time.Now().Add(15*time.Second), true))
 

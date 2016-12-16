@@ -113,7 +113,7 @@ func main() {
 	)
 	switch *src {
 	case "rf":
-		fe, err = internal.Tune(*fpath, *sys, *pol, int64(*freq*1e6), int(*bw*1e6), *sr)
+		fe, err = internal.Tune(*fpath, *sys, *pol, int64(*freq*1e6), int(*bw*1e6), *sr*1e3)
 		checkErr(err)
 		checkErr(internal.WaitForTune(fe, time.Now().Add(5*time.Second), true))
 		r, filter = setFilter(*dmxpath, *dvrpath, pids)
