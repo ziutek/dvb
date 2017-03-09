@@ -83,7 +83,7 @@ func (h Header) IsValid() bool {
 		return false
 	}
 	var optLen int
-	switch flags&HasPTS | HasDTS {
+	switch flags&(HasPTS | HasDTS) {
 	case HasPTS:
 		optLen = 5
 	case HasPTS | HasDTS:
