@@ -20,7 +20,7 @@ const (
 	dmxpath = adpath + "/demux0"
 	dvrpath = adpath + "/dvr0"
 	freq    = 778 // MHz
-	pcrpid = 202
+	pcrpid  = 202
 )
 
 func checkErr(err error) {
@@ -100,7 +100,7 @@ func (p *PCR) Loop(dvr ts.PktReader) {
 			continue
 		}
 		af := pkt.AF()
-		if !af.Flags().ContainsPCR() {
+		if af.Flags()&ts.ContainsPCR == 0 {
 			continue
 		}
 		pcr, err := af.PCR()

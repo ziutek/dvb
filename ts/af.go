@@ -19,45 +19,16 @@ func (a AF) Flags() AFFlags {
 
 type AFFlags byte
 
-// Discontinuity returns true if discontinuity_indicator == 1
-func (f AFFlags) Discontinuity() bool {
-	return f&0x80 != 0
-}
-
-// RandomAccess returns true if random_access_indicator == 1
-func (f AFFlags) RandomAccess() bool {
-	return f&0x40 != 0
-}
-
-// ESPrio returns true if elementary_stream_priority_indicator == 1
-func (f AFFlags) ESPrio() bool {
-	return f&0x20 != 0
-}
-
-// ContainsPCR returns true if PCR_flag == 1
-func (f AFFlags) ContainsPCR() bool {
-	return f&0x10 != 0
-}
-
-// ContainsOPCR returns true if OPCR_flag == 1
-func (f AFFlags) ContainsOPCR() bool {
-	return f&8 != 0
-}
-
-// SplicingPoint returns true if splicing_point_flag == 1
-func (f AFFlags) SplicingPoint() bool {
-	return f&4 != 0
-}
-
-// PrivateData returns true if transport_private_data_flag == 1
-func (f AFFlags) ContainsPrivateData() bool {
-	return f&2 != 0
-}
-
-// HasExtension returns true if adaptation_field_extension_flag == 1
-func (f AFFlags) HasExtension() bool {
-	return f&1 != 0
-}
+const (
+	Discontinuity       AFFlags = 0x80 // discontinuity_indicator
+	RandomAccess        AFFlags = 0x40 // random_access_indicator
+	ESPrio              AFFlags = 0x20 // elementary_stream_priority_indicator
+	ContainsPCR         AFFlags = 0x10 // PCR_flag
+	ContainsOPCR        AFFlags = 0x08 // OPCR_flag
+	SplicingPoint       AFFlags = 0x04 // splicing_point_flag
+	ContainsPrivateData AFFlags = 0x02 // transport_private_data_flag
+	HasExtension        AFFlags = 0x01 // adaptation_field_extension_flag
+)
 
 var (
 	ErrAFTooShort = errors.New("adaptation field is too short")
@@ -117,7 +88,7 @@ func (c PCR) Add(ns time.Duration) PCR {
 // PCR returns value of PCR in a. It returns PCR == -1 and not nil
 // error if there is no PCR in AF or it can't decode PCR.
 func (a AF) PCR() (PCR, error) {
-	if !a.Flags().ContainsPCR() {
+	if a.Flags()&ContainsPCR == 0 {
 		return -1, ErrNotInAF
 	}
 	end := 1 + 6
@@ -128,7 +99,7 @@ func (a AF) PCR() (PCR, error) {
 }
 
 func (a AF) SetPCR(pcr PCR) error {
-	if !a.Flags().ContainsPCR() {
+	if a.Flags()&ContainsPCR == 0 {
 		return ErrNotInAF
 	}
 	end := 1 + 6
@@ -143,11 +114,11 @@ func (a AF) SetPCR(pcr PCR) error {
 // error if there is no OPCR in AF or it can't decode OPCR.
 func (a AF) OPCR() (PCR, error) {
 	f := a.Flags()
-	if !f.ContainsOPCR() {
+	if f&ContainsOPCR == 0 {
 		return -1, ErrNotInAF
 	}
 	end := 1 + 7
-	if f.ContainsPCR() {
+	if a.Flags()&ContainsPCR != 0 {
 		end += 6
 	}
 	if len(a) < end {
@@ -158,14 +129,14 @@ func (a AF) OPCR() (PCR, error) {
 
 func (a AF) SpliceCountdown() (int8, error) {
 	f := a.Flags()
-	if !f.SplicingPoint() {
+	if f&SplicingPoint == 0 {
 		return -1, ErrNotInAF
 	}
 	offset := 1
-	if f.ContainsPCR() {
+	if f&ContainsPCR != 0 {
 		offset += 6
 	}
-	if f.ContainsOPCR() {
+	if f&ContainsOPCR != 0 {
 		offset += 6
 	}
 	if len(a) < offset+1 {
