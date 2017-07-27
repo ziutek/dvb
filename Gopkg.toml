@@ -1,0 +1,11 @@
+[[constraint]]
+  branch = "master"
+  name = "github.com/ziutek/sched"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/ziutek/textenc"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/ziutek/thread"
