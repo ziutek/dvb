@@ -154,10 +154,12 @@ func main() {
 		}
 		log.Printf("API3 RSSI: %s  SNR: %s  BER: %s  UBLK: %s", rssi, snr, ber, ublk)
 		s, err := fe.Stat()
-		checkErr(err)
-		log.Printf(
-			"API5 Sig: %v  CNR: %v  PreIFEC: %v/%v bit/bit  PostIFEC: %v/%v bit/bit  PostOFEC %v/%v blk/blk\n",
-			s.Signal, s.CNR, s.PreErrBit, s.PreTotBit, s.PostErrBit, s.PostTotBit, s.ErrBlk, s.TotBlk)
+		if err == nil {
+			log.Printf(
+				"API5 Sig: %v  CNR: %v  PreIFEC: %v/%v bit/bit  PostIFEC: %v/%v bit/bit  PostOFEC %v/%v blk/blk\n",
+				s.Signal, s.CNR, s.PreErrBit, s.PreTotBit, s.PostErrBit, s.PostTotBit, s.ErrBlk, s.TotBlk,
+			)
+		}
 		time.Sleep(2 * time.Second)
 	}
 }
