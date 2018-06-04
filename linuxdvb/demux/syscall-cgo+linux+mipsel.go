@@ -11,8 +11,6 @@ const (
 	_DMX_SET_FILTER      = 0x803c6f2b
 	_DMX_SET_PES_FILTER  = 0x80146f2c
 	_DMX_GET_PES_PIDS    = 0x400a6f2f
-	_DMX_GET_CAPS        = 0x40086f30
-	_DMX_SET_SOURCE      = 0x80046f31
 	_DMX_GET_STC         = 0xc0106f32
 	_DMX_ADD_PID         = 0x80026f33
 	_DMX_REMOVE_PID      = 0x80026f34
