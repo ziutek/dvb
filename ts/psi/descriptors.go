@@ -14,34 +14,38 @@ import (
 type ServiceType byte
 
 const (
-	ZeroServiceType          = ServiceType(0x00)
-	DigitalTelevisionService = ServiceType(0x01)
-	DigitalRadioSoundService = ServiceType(0x02)
-	TeletextService          = ServiceType(0x03)
-	NVODReferenceService     = ServiceType(0x04)
-	NVODTimeShiftedService   = ServiceType(0x05)
-	MosaicService            = ServiceType(0x06)
-	FMRadioService           = ServiceType(0x07)
-	DVBSRMService            = ServiceType(0x08)
-	// 0x09
-	AdvancedCodecDigitalRadioSoundService = ServiceType(0x0a)
-	AdvancedCodecMosaicService            = ServiceType(0x0b)
-	DataBroadcastService                  = ServiceType(0x0c)
-	// 0x0d
-	RCSMapService                   = ServiceType(0x0e)
-	RCSFLSService                   = ServiceType(0x0f)
-	DVBMHPService                   = ServiceType(0x10)
-	MPEG2HDDigitalTelevisionService = ServiceType(0x11)
-	// 0x12
-	// 0x13
-	// 0x14
-	// 0x15
-	AdvancedCodecSDDigitalTelevisionService = ServiceType(0x16)
-	AdvancedCodecSDNVODTimeShiftedService   = ServiceType(0x17)
-	AdvancedCodecSDNVODReferenceService     = ServiceType(0x18)
-	AdvancedCodecHDDigitalTelevisionService = ServiceType(0x19)
-	AdvancedCodecHDNVODTimeShiftedService   = ServiceType(0x1a)
-	AdvancedCodecHDNVODReferenceService     = ServiceType(0x1b)
+	ZeroServiceType                            = ServiceType(0x00)
+	DigitalTelevisionService                   = ServiceType(0x01)
+	DigitalRadioSoundService                   = ServiceType(0x02)
+	TeletextService                            = ServiceType(0x03)
+	NVODReferenceService                       = ServiceType(0x04)
+	NVODTimeShiftedService                     = ServiceType(0x05)
+	MosaicService                              = ServiceType(0x06)
+	FMRadioService                             = ServiceType(0x07)
+	DVBSRMService                              = ServiceType(0x08)
+	_                                          = ServiceType(0x09)
+	AdvancedCodecDigitalRadioSoundService      = ServiceType(0x0a)
+	AdvancedCodecMosaicService                 = ServiceType(0x0b)
+	DataBroadcastService                       = ServiceType(0x0c)
+	_                                          = ServiceType(0x0d)
+	RCSMapService                              = ServiceType(0x0e)
+	RCSFLSService                              = ServiceType(0x0f)
+	DVBMHPService                              = ServiceType(0x10)
+	MPEG2HDDigitalTelevisionService            = ServiceType(0x11)
+	_                                          = ServiceType(0x12)
+	_                                          = ServiceType(0x13)
+	_                                          = ServiceType(0x14)
+	_                                          = ServiceType(0x15)
+	H264SDDigitalTelevisionService             = ServiceType(0x16)
+	H264SDNVODTimeShiftedService               = ServiceType(0x17)
+	H264SDNVODReferenceService                 = ServiceType(0x18)
+	H264HDDigitalTelevisionService             = ServiceType(0x19)
+	H264HDNVODTimeShiftedService               = ServiceType(0x1a)
+	H264HDNVODReferenceService                 = ServiceType(0x1b)
+	H264StereoscopicHDDigitalTelevisionService = ServiceType(0x1c)
+	H264StereoscopicHDNVODTimeShiftedService   = ServiceType(0x1d)
+	H264StereoscopicHDNVODReferenceService     = ServiceType(0x1e)
+	H265DigitalTelevisionService               = ServiceType(0x1f)
 )
 
 var stn = []string{
@@ -72,10 +76,14 @@ var stn = []string{
 	"advanced codec HD digital television",
 	"advanced codec HD NVOD time-shifted",
 	"advanced codec HD NVOD reference",
+	"advanced codec frame compatible plano-stereoscopic HD digital television",
+	"advanced codec frame compatible plano-stereoscopic HD NVOD time-shifted",
+	"advanced codec frame compatible plano-stereoscopic HD NVOD reference",
+	"high hfficiency codec digital television",
 }
 
 func (t ServiceType) String() string {
-	if t == 0 || t == 0xff || t > AdvancedCodecHDNVODReferenceService && t <= 0x7F {
+	if t == 0 || t == 0xff || t > H265DigitalTelevisionService && t <= 0x7F {
 		return "reserved"
 	}
 	if t > 0x7F {
