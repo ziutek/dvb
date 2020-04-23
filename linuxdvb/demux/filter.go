@@ -80,9 +80,16 @@ func (s *syn) WaitRead(f *os.File) (bool, error) {
 	s.m.Lock()
 	for {
 		var r fdset
+		var n int
+		var err error
 		r.Set(ffd)
 		r.Set(pfd)
-		n, err := syscall.Select(nfd, r.Sys(), nil, nil, nil)
+		for {
+			n, err = syscall.Select(nfd, r.Sys(), nil, nil, nil)
+			if err != syscall.EINTR {
+				break
+			}
+		}
 		if err != nil {
 			return false, err
 		}

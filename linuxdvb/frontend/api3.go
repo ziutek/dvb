@@ -494,9 +494,16 @@ func (f API3) WaitEvent(ev *Event, deadline time.Time) (bool, error) {
 			return true, nil
 		}
 		var r syscall.FdSet
+		var n int
+		var err error
 		r.Bits[fd/64] = 1 << (fd % 64)
 		tv := syscall.NsecToTimeval(int64(timeout))
-		n, err := syscall.Select(int(fd+1), &r, nil, nil, &tv)
+		for {
+			n, err = syscall.Select(int(fd+1), &r, nil, nil, &tv)
+			if err != syscall.EINTR {
+				break
+			}
+		}
 		if err != nil {
 			return false, Error{"get", "event (select)", err}
 		}

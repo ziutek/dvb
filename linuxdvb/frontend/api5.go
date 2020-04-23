@@ -14,7 +14,12 @@ type Device struct {
 }
 
 func Open(filepath string) (d Device, err error) {
-	d.file, err = os.OpenFile(filepath, os.O_RDWR, 0)
+	for {
+		d.file, err = os.OpenFile(filepath, os.O_RDWR, 0)
+		if err == nil || err.(*os.PathError).Err != syscall.EINTR {
+			break
+		}
+	}
 	return
 }
 
