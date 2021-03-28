@@ -10,6 +10,7 @@ type Header []byte
 
 const (
 	programStreamMap       = 0xbc
+	privateStream1         = 0xbd
 	paddingStream          = 0xbe
 	privateStream2         = 0xbf
 	ecmStream              = 0xf0
@@ -48,13 +49,14 @@ const (
 func (h Header) HasFlags() bool {
 	sid := h.StreamId()
 	return !(sid == programStreamMap ||
+		sid == privateStream1 ||
 		sid == paddingStream ||
 		sid == privateStream2 ||
 		sid == ecmStream ||
 		sid == emmStream ||
-		sid == programStreamDirectory ||
 		sid == dsmccStream ||
-		sid == h2221TypeEStream)
+		sid == h2221TypeEStream ||
+		sid == programStreamDirectory)
 }
 
 func (h Header) Flags() HeaderFlags {
