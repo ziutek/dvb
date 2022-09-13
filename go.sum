@@ -1,0 +1,6 @@
+github.com/ziutek/sched v0.0.0-20131112123417-99e9aee91990 h1:BoAc/Ki+JZV+qduDMdUozzaAqVDS5DPrerwd2VmfTVU=
+github.com/ziutek/sched v0.0.0-20131112123417-99e9aee91990/go.mod h1:R/ytS8b1pZ08AuszwAtaKGPzHA8yZcCc1EgMD2HbI+Q=
+github.com/ziutek/textenc v0.1.0 h1:wFEnAoh/a7eYTpvTSf9sWx3vJAVPeAIhuAjt4R+0Jmc=
+github.com/ziutek/textenc v0.1.0/go.mod h1:FKEe3Nx5aSvEdj2ihBivhkvc+q3yz411QMftAU10qO8=
+github.com/ziutek/thread v0.0.0-20121228123141-f23f229f4583 h1:eOrYEb0xTP55LRO63YspiFCQ27YZMPnkUxR2etKPsqw=
+github.com/ziutek/thread v0.0.0-20121228123141-f23f229f4583/go.mod h1:MJm+drJ/6kInIIZXVke7ukoJ3WYbBg6AIrK5Bi5CPg0=
