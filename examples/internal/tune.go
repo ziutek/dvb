@@ -23,8 +23,12 @@ func Tune(fpath, sys, pol string, freqHz int64, bwHz int, srBd uint) (fe fronten
 		return
 	}
 	switch sys {
-	case "t":
-		if err = fe.SetDeliverySystem(dvb.SysDVBT); err != nil {
+	case "t", "t2":
+		ds := dvb.SysDVBT
+		if sys == "t2" {
+			ds = dvb.SysDVBT2
+		}
+		if err = fe.SetDeliverySystem(ds); err != nil {
 			return
 		}
 		if err = fe.SetModulation(dvb.QAMAuto); err != nil {

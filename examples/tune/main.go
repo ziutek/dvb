@@ -49,7 +49,7 @@ func main() {
 	)
 	sys := flag.String(
 		"sys", "t",
-		"delivery system type: t, s, s2, ca, cb, cc",
+		"delivery system type: t, t2, s, s2, ca, cb, cc",
 	)
 	freq := flag.Float64(
 		"freq", 0,
