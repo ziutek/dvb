@@ -96,6 +96,10 @@ func (i ESInfo) Type() StreamType {
 	return StreamType(i[0])
 }
 
+func (i ESInfo) SetType(typ StreamType) {
+	i[0] = byte(typ)
+}
+
 func (i ESInfo) Pid() int16 {
 	return int16(decodeU16(i[1:3]) & 0x1fff)
 }
@@ -135,7 +139,8 @@ func (il ESInfoList) Pop() (i ESInfo, ril ESInfoList) {
 
 // Append adds i to the end of the il. It works like Go append function so need
 // to be used in this way:
-//     il = il.Append(i)
+//
+//	il = il.Append(i)
 func (il ESInfoList) Append(i ESInfo) ESInfoList {
 	return append(il, i...)
 }
